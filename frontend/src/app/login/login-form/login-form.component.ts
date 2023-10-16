@@ -21,14 +21,8 @@ export class LoginFormComponent implements OnInit {
   ngOnInit(): void {}
 
   onLogin() {
-    if (
-      this.loginForm.valid &&
-      this.loginForm.value.username &&
-      this.loginForm.value.password
-    ) {
-      this.login.emit({
-        username: this.loginForm.value.username,
-        password: this.loginForm.value.password,
+    if (this.loginForm.valid && this.loginForm.value.username && this.loginForm.value.password) {
+      this.login.emit({username: this.loginForm.value.username, password: this.loginForm.value.password,
       });
     }
   }
