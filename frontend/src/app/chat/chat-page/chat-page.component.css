@@ -17,22 +17,3 @@
   border-width: 1px;
   width: 60vw;
 }
-
-.messages {
-  height: 70vh;
-  overflow-y: scroll;
-  text-align: left;
-  padding: 30px;
-}
-
-p {
-  margin: 10px;
-}
-
-form {
-  display: flex;
-}
-
-input[type="text"] {
-  flex: 1;
-}

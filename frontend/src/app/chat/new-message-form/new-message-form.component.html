@@ -1,0 +1,8 @@
+<form (ngSubmit)="onSendMessage()" [formGroup]="messageForm">
+  <mat-form-field appearance="outline">
+    <input matInput name="message" type="text" formControlName="msg" />
+    <button mat-icon-button matSuffix type="submit">
+      <mat-icon>send</mat-icon>
+    </button>
+  </mat-form-field>
+</form>
