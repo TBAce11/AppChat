@@ -1,9 +1,8 @@
 package com.inf5190.chat.auth;
 
-import java.time.Duration;
-
 import javax.servlet.http.Cookie;
-import org.springframework.http.*;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.inf5190.chat.auth.model.LoginRequest;
 import com.inf5190.chat.auth.model.LoginResponse;
-import com.inf5190.chat.auth.session.SessionData;
 import com.inf5190.chat.auth.session.SessionManager;
 
 /**
@@ -31,26 +29,8 @@ public class AuthController {
 
     @PostMapping(AUTH_LOGIN_PATH)
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
-        // Validation du MDP plus tard
-
-        SessionData sessionData = new SessionData(loginRequest.username());
-
-        String sessionId = sessionManager.addSession(sessionData);
-
-        ResponseCookie cookie = ResponseCookie.from(SESSION_ID_COOKIE_NAME, sessionId)
-                .secure(true)
-                .httpOnly(true)
-                .path("/")
-                .maxAge(Duration.ofHours(24))
-                .build();
-
-        // À confirmer
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
-
-        LoginResponse response = new LoginResponse(loginRequest.username());
-
-        return ResponseEntity.ok().headers(headers).body(response);
+        // À faire...
+        return null;
     }
 
     @PostMapping(AUTH_LOGOUT_PATH)
