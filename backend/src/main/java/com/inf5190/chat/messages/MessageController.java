@@ -3,7 +3,14 @@ package com.inf5190.chat.messages;
 import com.inf5190.chat.auth.session.SessionDataAccessor;
 import com.inf5190.chat.messages.repository.MessageRepository;
 import com.inf5190.chat.websocket.WebSocketManager;
+import com.inf5190.chat.messages.model.Message;
 
+import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -23,5 +30,15 @@ public class MessageController {
         this.webSocketManager = webSocketManager;
     }
 
-    // À faire...
+    @GetMapping(MESSAGES_PATH)
+    public List<Message> getMessages(@RequestParam(required = false) Long fromId) {
+        return messageRepository.getMessages(fromId);
+    }
+
+    @PostMapping(MESSAGES_PATH)
+    public Message createMessage(@RequestBody Message message) {
+        Message createdMessage = messageRepository.createMessage(message);
+        webSocketManager.notifySessions(); // message à passer en paramètre?
+        return createdMessage;
+    }
 }
