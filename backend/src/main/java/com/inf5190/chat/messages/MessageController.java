@@ -31,14 +31,13 @@ public class MessageController {
     }
 
     @GetMapping(MESSAGES_PATH)
-    public List<Message> getMessages(@RequestParam(required = false) Long fromId) {
+    public List<Message> getMessages(@RequestParam(value = "fromId", required = false) Long fromId) {
         return messageRepository.getMessages(fromId);
     }
 
     @PostMapping(MESSAGES_PATH)
     public Message createMessage(@RequestBody Message message) {
-        Message createdMessage = messageRepository.createMessage(message);
-        webSocketManager.notifySessions(); // message à passer en paramètre?
-        return createdMessage;
+        webSocketManager.notifySessions(); 
+        return messageRepository.createMessage(message);
     }
 }

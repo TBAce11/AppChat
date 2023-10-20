@@ -22,7 +22,7 @@ public class MessageRepository {
         List<Message> retrievedMessages = new ArrayList<Message>();
 
         for (Message message : messages) {
-            if (message.id() >= fromId) { // logique de partie 3 à intégrer
+            if (message.id() > fromId) { // logique de partie 3 à intégrer
                 retrievedMessages.add(message);
             }
         }
@@ -31,9 +31,9 @@ public class MessageRepository {
     }
 
     public Message createMessage(Message message) {
-        long id = idGenerator.incrementAndGet();
         // format du timestamp à revoir
-        message = new Message(id, message.username(), System.currentTimeMillis(), message.text());
+        message = new Message(idGenerator.incrementAndGet(), message.username(), System.currentTimeMillis(),
+                message.text());
         messages.add(message);
 
         return message;

@@ -33,7 +33,11 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.messagesService.fetchMessages().subscribe((messages) => {
+      this.messages = messages;
+    });
+  }
 
   ngOnDestroy(): void {
     if (this.usernameSubscription) {
@@ -50,6 +54,11 @@ export class ChatPageComponent implements OnInit, OnDestroy {
         text: message,
         username: this.username,
         timestamp: Date.now(),
+      });
+
+      //Solution temporaire pré-étape 3
+      this.messagesService.fetchMessages().subscribe((messages) => {
+        this.messages = messages;
       });
     }
   }
