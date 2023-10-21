@@ -37,7 +37,8 @@ public class MessageController {
 
     @PostMapping(MESSAGES_PATH)
     public Message createMessage(@RequestBody Message message) {
-        webSocketManager.notifySessions(); 
-        return messageRepository.createMessage(message);
+        Message newMessage = messageRepository.createMessage(message);
+        webSocketManager.notifySessions(newMessage.id());
+        return newMessage;
     }
 }

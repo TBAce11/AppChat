@@ -4,6 +4,8 @@ import { AuthenticationService } from "src/app/login/authentication.service";
 import { Message } from "../message.model";
 import { MessagesService } from "../messages.service";
 import { Router } from "@angular/router";
+import { WebSocketService } from "src/environments/websocket.service";
+import { WebSocketEvent } from "src/environments/websocket.service";
 
 @Component({
   selector: "app-chat-page",
@@ -23,7 +25,8 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private messagesService: MessagesService,
-    private authenticationService: AuthenticationService
+    private authenticationService: AuthenticationService,
+    private webSocketService: WebSocketService
   ) {
     this.usernameSubscription = this.username$.subscribe((u) => {
       this.username = u;
@@ -34,9 +37,16 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.messagesService.fetchMessages().subscribe((messages) => {
-      this.messages = messages;
-    });
+    // Connexion WebSocket
+    this.webSocketService
+      .connect(this.messages[this.messages.length - 1]?.id)
+      .subscribe((event: WebSocketEvent) => {
+        if (event === "notif") {
+          this.messagesService.fetchMessages().subscribe((messages) => {
+            this.messages = messages;
+          });
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -46,6 +56,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     if (this.messagesSubscription) {
       this.messagesSubscription.unsubscribe();
     }
+
+    //Déconnexion WebSocket
+    this.webSocketService.disconnect();
   }
 
   onPublishMessage(message: string) {
@@ -56,10 +69,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
         timestamp: Date.now(),
       });
 
-      //Solution temporaire pré-étape 3
+      /*//Solution temporaire pré-étape 3
       this.messagesService.fetchMessages().subscribe((messages) => {
         this.messages = messages;
-      });
+      });*/
     }
   }
 
