@@ -4,6 +4,10 @@ import { AuthenticationService } from "src/app/login/authentication.service";
 import { Message } from "../message.model";
 import { MessagesService } from "../messages.service";
 import { Router } from "@angular/router";
+import { WebSocketService } from "src/environments/websocket.service";
+import { WebSocketEvent } from "src/environments/websocket.service";
+
+const regex = /notif:(\d+)/;
 
 @Component({
   selector: "app-chat-page",
@@ -23,17 +27,38 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private messagesService: MessagesService,
-    private authenticationService: AuthenticationService
+    private authenticationService: AuthenticationService,
+    private webSocketService: WebSocketService
   ) {
     this.usernameSubscription = this.username$.subscribe((u) => {
       this.username = u;
     });
     this.messagesSubscription = this.messages$.subscribe((m) => {
-      this.messages = m;
+      console.log("m", m);
+      console.log("this.messages", this.messages);
+      for (let msg in m) {
+        this.messages.push(m[msg]);
+      }
     });
   }
 
-  ngOnInit(): void {}
+  getNotificationId(message: string): number | undefined {
+    const matches = message.match(regex);
+    if (matches) {
+      return parseInt(matches[1]) + 1;
+    }
+    return undefined;
+  }
+
+  ngOnInit(): void {
+    this.onPublishMessage("user just connected");
+    // Connexion WebSocket
+    this.webSocketService.connect().subscribe((event: WebSocketEvent) => {
+      if (event.startsWith("notif")) {
+        this.messagesService.fetchMessages(this.getNotificationId(event));
+      }
+    });
+  }
 
   ngOnDestroy(): void {
     if (this.usernameSubscription) {
@@ -42,6 +67,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     if (this.messagesSubscription) {
       this.messagesSubscription.unsubscribe();
     }
+
+    //Déconnexion WebSocket
+    this.webSocketService.disconnect();
   }
 
   onPublishMessage(message: string) {
@@ -51,10 +79,16 @@ export class ChatPageComponent implements OnInit, OnDestroy {
         username: this.username,
         timestamp: Date.now(),
       });
+
+      /*//Solution temporaire pré-étape 3
+      this.messagesService.fetchMessages().subscribe((messages) => {
+        this.messages = messages;
+      });*/
     }
   }
 
   onLogout() {
+    this.onPublishMessage("user just disconnected");
     this.authenticationService.logout();
     this.router.navigate(["/"]);
   }

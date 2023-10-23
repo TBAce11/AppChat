@@ -1,20 +1,49 @@
 import { Injectable } from "@angular/core";
-import { BehaviorSubject, Observable } from "rxjs";
+import { BehaviorSubject, Observable, tap } from "rxjs";
 import { Message } from "./message.model";
+import { HttpClient } from "@angular/common/http";
+import { environment } from "src/environments/environment";
 
 @Injectable({
   providedIn: "root",
 })
 export class MessagesService {
   messages = new BehaviorSubject<Message[]>([]);
+  messagesPath = "messages";
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
-  postMessage(message: Message): void {
-    this.messages.next([...this.messages.getValue(), message]);
+  postMessage(message: Message) {
+    console.log(message);
+    try {
+      this.http
+        .post(`${environment.backendUrl}/${this.messagesPath}`, message, {
+          withCredentials: true,
+        })
+        .subscribe((res) => {
+          this.messages.next([...this.messages.value, message]);
+        });
+    } catch (err) {
+      throw new Error("Erruer en envoyant le message");
+    }
   }
 
   getMessages(): Observable<Message[]> {
     return this.messages.asObservable();
+  }
+
+  fetchMessages(messageId?: number): void {
+    console.log(messageId);
+    let url = `${environment.backendUrl}/${this.messagesPath}`;
+    if (messageId) {
+      url += `/${messageId}`;
+    }
+    this.http
+      .get<Message[]>(url, {
+        withCredentials: true,
+      })
+      .subscribe((messages) => {
+        this.messages.next(messages);
+      });
   }
 }

@@ -19,13 +19,23 @@ public class MessageRepository {
     private final AtomicLong idGenerator = new AtomicLong(0);
 
     public List<Message> getMessages(Long fromId) {
-        // À faire...
-        return new ArrayList<>();
+        List<Message> retrievedMessages = new ArrayList<Message>();
+
+        for (Message message : messages) {
+            if (fromId != null && message.id() >= fromId) { // logique de partie 3 à intégrer
+                retrievedMessages.add(message);
+            }
+        }
+
+        return retrievedMessages;
     }
 
     public Message createMessage(Message message) {
-        // À faire...
-        return null;
+        // format du timestamp à revoir
+        message = new Message(idGenerator.incrementAndGet(), message.username(), System.currentTimeMillis(), message.text());
+        messages.add(message);
+
+        return message;
     }
 
 }
