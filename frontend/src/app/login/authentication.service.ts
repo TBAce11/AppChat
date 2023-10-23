@@ -16,32 +16,34 @@ export class AuthenticationService {
     this.username.next(localStorage.getItem(AuthenticationService.KEY));
   }
 
-  async login(userCredentials: UserCredentials): Promise<void> {
+  login(userCredentials: UserCredentials): void {
     try {
-      await this.httpClient.post(
-        `${environment.backendUrl}/auth/login`,
-        userCredentials,
-        {
+      this.httpClient
+        .post(`${environment.backendUrl}/auth/login`, userCredentials, {
           withCredentials: true,
-        }
-      );
-      localStorage.setItem(AuthenticationService.KEY, userCredentials.username);
+        })
+        .subscribe((res) => {
+          console.log(res);
+          localStorage.setItem(
+            AuthenticationService.KEY,
+            userCredentials.username
+          );
+        });
       this.username.next(userCredentials.username);
     } catch (err) {
       throw new Error("Erreur de connexion: " + err);
     }
   }
 
-  async logout(): Promise<void> {
-    try {
-      await this.httpClient.post(`${environment.backendUrl}/auth/logout`, {
+  logout(): void {
+    this.httpClient
+      .post(`${environment.backendUrl}/auth/logout`, {
         withCredentials: true,
+      })
+      .subscribe((res) => {
+        localStorage.removeItem(AuthenticationService.KEY);
+        this.username.next(null);
       });
-      localStorage.removeItem(AuthenticationService.KEY);
-      this.username.next(null);
-    } catch (err) {
-      throw new Error("Erreur de connexion: " + err);
-    }
   }
 
   getUsername(): Observable<string | null> {

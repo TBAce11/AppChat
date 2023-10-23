@@ -1,0 +1,23 @@
+--- backend/src/main/java/com/inf5190/chat/messages/MessageController.java
++++ backend/src/main/java/com/inf5190/chat/messages/MessageController.java
+@@ -31,9 +32,18 @@ public class MessageController {
+         this.webSocketManager = webSocketManager;
+     }
+ 
++    /**
++     * this is for optimisation purposes, we don't want to load all the messages
++     * 
++     * @return a list of messages
++     */
+     @GetMapping(MESSAGES_PATH)
+-    public List<Message> getMessages(
+-            @RequestParam(value = "fromId", required = false, defaultValue = "1") Long fromId) {
++    public List<Message> getMessages() {
++        return getMessagesFiltered(1L);
++    }
++
++    @GetMapping(MESSAGES_PATH_FILTERED)
++    public List<Message> getMessagesFiltered(@PathVariable Long fromId) {
+         return messageRepository.getMessages(fromId);
+     }
+ 

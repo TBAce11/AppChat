@@ -7,6 +7,8 @@ import { Router } from "@angular/router";
 import { WebSocketService } from "src/environments/websocket.service";
 import { WebSocketEvent } from "src/environments/websocket.service";
 
+const regex = /notif:(\d+)/;
+
 @Component({
   selector: "app-chat-page",
   templateUrl: "./chat-page.component.html",
@@ -32,21 +34,30 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       this.username = u;
     });
     this.messagesSubscription = this.messages$.subscribe((m) => {
-      this.messages = m;
+      console.log("m", m);
+      console.log("this.messages", this.messages);
+      for (let msg in m) {
+        this.messages.push(m[msg]);
+      }
     });
   }
 
+  getNotificationId(message: string): number | undefined {
+    const matches = message.match(regex);
+    if (matches) {
+      return parseInt(matches[1]) + 1;
+    }
+    return undefined;
+  }
+
   ngOnInit(): void {
+    this.onPublishMessage("user just connected");
     // Connexion WebSocket
-    this.webSocketService
-      .connect(this.messages[this.messages.length - 1]?.id)
-      .subscribe((event: WebSocketEvent) => {
-        if (event === "notif") {
-          this.messagesService.fetchMessages().subscribe((messages) => {
-            this.messages = messages;
-          });
-        }
-      });
+    this.webSocketService.connect().subscribe((event: WebSocketEvent) => {
+      if (event.startsWith("notif")) {
+        this.messagesService.fetchMessages(this.getNotificationId(event));
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -77,6 +88,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   }
 
   onLogout() {
+    this.onPublishMessage("user just disconnected");
     this.authenticationService.logout();
     this.router.navigate(["/"]);
   }
