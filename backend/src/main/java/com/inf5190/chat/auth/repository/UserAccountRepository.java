@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.springframework.stereotype.Repository;
 
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.cloud.FirestoreClient;
 
@@ -13,11 +14,16 @@ public class UserAccountRepository {
     private final Firestore firestore = FirestoreClient.getFirestore();
 
     public FirestoreUserAccount getUserAccount(String username) throws InterruptedException, ExecutionException {
-        throw new UnsupportedOperationException("A faire");
+        DocumentSnapshot documentSnapshot = firestore.collection(COLLECTION_NAME).document(username).get().get();
+
+        if (documentSnapshot.exists()) {
+            return documentSnapshot.toObject(FirestoreUserAccount.class);
+        } else {
+            return null;
+        }
     }
 
     public void setUserAccount(FirestoreUserAccount userAccount) throws InterruptedException, ExecutionException {
-        /* ajouter .get() plus tard */
         firestore.collection(COLLECTION_NAME).document(userAccount.getUsername()).set(userAccount);
     }
 }
