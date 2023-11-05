@@ -51,7 +51,6 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.onPublishMessage("user just connected");
     // Connexion WebSocket
     this.webSocketService.connect().subscribe((event: WebSocketEvent) => {
       if (event.startsWith("notif")) {
@@ -79,16 +78,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
         username: this.username,
         timestamp: Date.now(),
       });
-
-      /*//Solution temporaire pré-étape 3
-      this.messagesService.fetchMessages().subscribe((messages) => {
-        this.messages = messages;
-      });*/
     }
   }
 
   onLogout() {
-    this.onPublishMessage("user just disconnected");
     this.authenticationService.logout();
     this.router.navigate(["/"]);
   }

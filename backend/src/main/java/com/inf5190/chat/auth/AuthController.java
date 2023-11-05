@@ -1,6 +1,7 @@
 package com.inf5190.chat.auth;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
 
 import javax.servlet.http.Cookie;
 import org.springframework.http.*;
@@ -13,6 +14,8 @@ import com.inf5190.chat.auth.model.LoginRequest;
 import com.inf5190.chat.auth.model.LoginResponse;
 import com.inf5190.chat.auth.session.SessionData;
 import com.inf5190.chat.auth.session.SessionManager;
+import com.inf5190.chat.auth.repository.UserAccountRepository;
+import com.inf5190.chat.auth.repository.FirestoreUserAccount;
 
 /**
  * Contrôleur qui gère l'API de login et logout.
@@ -24,14 +27,25 @@ public class AuthController {
     public static final String SESSION_ID_COOKIE_NAME = "sid";
 
     private final SessionManager sessionManager;
+    private final UserAccountRepository userAccountRepository;
 
-    public AuthController(SessionManager sessionManager) {
+    public AuthController(SessionManager sessionManager, UserAccountRepository userAccountRepository) {
         this.sessionManager = sessionManager;
+        this.userAccountRepository = userAccountRepository;
     }
 
     @PostMapping(AUTH_LOGIN_PATH)
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
-        // Validation du MDP plus tard
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest)
+            throws InterruptedException, ExecutionException {
+
+        String username = loginRequest.username();
+
+        FirestoreUserAccount existingAccount = userAccountRepository.getUserAccount(username);
+
+        if(existingAccount == null) {
+            existingAccount = new FirestoreUserAccount(username, loginRequest.password());
+            userAccountRepository.setUserAccount(existingAccount);
+        }
 
         SessionData sessionData = new SessionData(loginRequest.username());
 
@@ -44,7 +58,6 @@ public class AuthController {
                 .maxAge(Duration.ofHours(24))
                 .build();
 
-        // À confirmer
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
 
@@ -55,7 +68,7 @@ public class AuthController {
 
     @PostMapping(AUTH_LOGOUT_PATH)
     public ResponseEntity<Void> logout(@CookieValue("sid") Cookie sessionCookie) {
-        String sessionId = sessionCookie.getValue(); 
+        String sessionId = sessionCookie.getValue();
 
         sessionManager.removeSession(sessionId);
 

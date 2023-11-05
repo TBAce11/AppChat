@@ -24,7 +24,7 @@ export class MessagesService {
           this.messages.next([...this.messages.value, message]);
         });
     } catch (err) {
-      throw new Error("Erreur en envoyant le message");
+      throw new Error("Une erreur est survenue en envoyant le message.");
     }
   }
 
