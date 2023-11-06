@@ -5,10 +5,12 @@ import java.util.concurrent.ExecutionException;
 
 import javax.servlet.http.Cookie;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.inf5190.chat.auth.model.LoginRequest;
 import com.inf5190.chat.auth.model.LoginResponse;
@@ -28,10 +30,13 @@ public class AuthController {
 
     private final SessionManager sessionManager;
     private final UserAccountRepository userAccountRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController(SessionManager sessionManager, UserAccountRepository userAccountRepository) {
+    public AuthController(SessionManager sessionManager, UserAccountRepository userAccountRepository,
+            PasswordEncoder passwordEncoder) {
         this.sessionManager = sessionManager;
         this.userAccountRepository = userAccountRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping(AUTH_LOGIN_PATH)
@@ -39,12 +44,18 @@ public class AuthController {
             throws InterruptedException, ExecutionException {
 
         String username = loginRequest.username();
-
+        String password = loginRequest.password();
         FirestoreUserAccount existingAccount = userAccountRepository.getUserAccount(username);
 
-        if(existingAccount == null) {
-            existingAccount = new FirestoreUserAccount(username, loginRequest.password());
-            userAccountRepository.setUserAccount(existingAccount);
+        if (existingAccount == null) {
+            String encodedPassword = passwordEncoder.encode(password);
+            FirestoreUserAccount newAccount = new FirestoreUserAccount(username, encodedPassword);
+            userAccountRepository.setUserAccount(newAccount);
+        } else {
+            String storedEncodedPassword = existingAccount.getEncodedPassword();
+            if (!passwordEncoder.matches(password, storedEncodedPassword)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "\"Mot de passe erronné. Veuillez réessayer.\"");
+            }
         }
 
         SessionData sessionData = new SessionData(loginRequest.username());
