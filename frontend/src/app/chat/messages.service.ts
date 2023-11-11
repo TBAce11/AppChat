@@ -32,7 +32,7 @@ export class MessagesService {
     return this.messages.asObservable();
   }
 
-  fetchMessages(messageId?: number): void {
+  fetchMessages(messageId?: string): void {
     console.log(messageId);
     let url = `${environment.backendUrl}/${this.messagesPath}`;
     if (messageId) {

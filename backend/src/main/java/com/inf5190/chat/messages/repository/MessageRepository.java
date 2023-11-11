@@ -1,12 +1,21 @@
 package com.inf5190.chat.messages.repository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.Timestamp;
+import com.google.cloud.firestore.CollectionReference;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
+import com.google.firebase.cloud.FirestoreClient;
 
 import com.inf5190.chat.messages.model.Message;
-
 import org.springframework.stereotype.Repository;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Classe qui gère la persistence des messages.
@@ -15,27 +24,66 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class MessageRepository {
-    private final List<Message> messages = new ArrayList<Message>();
-    private final AtomicLong idGenerator = new AtomicLong(0);
+    private static final String COLLECTION_NAME = "messages";
+    private final Firestore firestore = FirestoreClient.getFirestore();
+    private final CollectionReference messagesCollection = firestore.collection(COLLECTION_NAME);
 
-    public List<Message> getMessages(Long fromId) {
+    public List<Message> getMessages(String fromId) {
         List<Message> retrievedMessages = new ArrayList<Message>();
 
-        for (Message message : messages) {
-            if (fromId != null && message.id() >= fromId) { // logique de partie 3 à intégrer
-                retrievedMessages.add(message);
+        ApiFuture<QuerySnapshot> future = messagesCollection.get();
+
+        try {
+            QuerySnapshot querySnapshot = future.get();
+
+            for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+                // Conversion du document Firestore en objet Message
+                Message message = documentToMessage(document);
+
+                if (fromId == null || message.id().compareTo(fromId) >= 0) {
+                    retrievedMessages.add(message);
+                }
             }
+
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
 
         return retrievedMessages;
     }
 
     public Message createMessage(Message message) {
-        // format du timestamp à revoir
-        message = new Message(idGenerator.incrementAndGet(), message.username(), System.currentTimeMillis(), message.text());
-        messages.add(message);
+        FirestoreMessage firestoreMessage = new FirestoreMessage();
+        firestoreMessage.setUsername(message.username());
+        firestoreMessage.setText(message.text());
 
-        return message;
+        ApiFuture<DocumentReference> future = messagesCollection.add(firestoreMessage);
+
+        try {
+            DocumentReference newMessageReference = future.get();
+
+            ApiFuture<DocumentSnapshot> documentSnapshotFuture = newMessageReference.get();
+            Timestamp timestamp = documentSnapshotFuture.get().getUpdateTime();
+
+            Message newMessage = new Message(newMessageReference.getId(), message.username(), timestamp.getSeconds(),
+                    message.text());
+
+            return newMessage;
+
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Conversion du document Firestore en objet Message
+    private Message documentToMessage(DocumentSnapshot document) {
+        String id = document.getId();
+        String username = document.getString("username");
+        Long timestamp = document.getTimestamp("timestamp").getSeconds();
+        String text = document.getString("text");
+
+        return new Message(id, username, timestamp, text);
     }
 
 }
