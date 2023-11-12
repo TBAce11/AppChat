@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { Subscription } from "rxjs";
 import { AuthenticationService } from "src/app/login/authentication.service";
-import { Message } from "../message.model";
+import { Message, NewMessageRequest } from "../message.model";
 import { MessagesService } from "../messages.service";
 import { Router } from "@angular/router";
 import { WebSocketService } from "src/environments/websocket.service";
@@ -72,14 +72,17 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   }
 
   onPublishMessage(message: string) {
-    if (this.username != null) {
-      this.messagesService.postMessage({
+    if (this.username !== null) {
+      const newMessage: NewMessageRequest = {
         text: message,
         username: this.username,
-        timestamp: Date.now(),
-      });
+        imageData: null,
+      };
+  
+      this.messagesService.postMessage(newMessage);
     }
   }
+  
 
   onLogout() {
     this.authenticationService.logout();

@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { BehaviorSubject, Observable, tap } from "rxjs";
-import { Message } from "./message.model";
+import { Message, NewMessageRequest } from "./message.model";
 import { HttpClient } from "@angular/common/http";
 import { environment } from "src/environments/environment";
 
@@ -13,15 +13,27 @@ export class MessagesService {
 
   constructor(private http: HttpClient) {}
 
-  postMessage(message: Message) {
-    console.log(message);
+  postMessage(newMessage: NewMessageRequest): void {
+    console.log(newMessage);
     try {
+      const message: Message = {
+        id: "",
+        text: newMessage.text,
+        username: newMessage.username,
+        timestamp: 0,
+        imageUrl: null,
+      };
+
       this.http
-        .post(`${environment.backendUrl}/${this.messagesPath}`, message, {
-          withCredentials: true,
-        })
+        .post<Message>(
+          `${environment.backendUrl}/${this.messagesPath}`,
+          message,
+          {
+            withCredentials: true,
+          }
+        )
         .subscribe((res) => {
-          this.messages.next([...this.messages.value, message]);
+          this.messages.next([...this.messages.value, res]);
         });
     } catch (err) {
       throw new Error("Une erreur est survenue en envoyant le message.");
