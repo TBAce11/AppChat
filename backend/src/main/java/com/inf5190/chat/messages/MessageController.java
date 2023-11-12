@@ -33,7 +33,7 @@ public class MessageController {
     }
 
     @GetMapping(MESSAGES_PATH)
-    public List<Message> getMessages(@RequestParam(value = "fromId", required = false) Long fromId) {
+    public List<Message> getMessages(@RequestParam(value = "fromId", required = false) String fromId) {
         return messageRepository.getMessages(fromId);
     }
 

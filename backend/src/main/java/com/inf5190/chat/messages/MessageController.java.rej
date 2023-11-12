@@ -11,13 +11,13 @@
 +     */
      @GetMapping(MESSAGES_PATH)
 -    public List<Message> getMessages(
--            @RequestParam(value = "fromId", required = false, defaultValue = "1") Long fromId) {
+-            @RequestParam(value = "fromId", required = false, defaultValue = "1") String fromId) {
 +    public List<Message> getMessages() {
 +        return getMessagesFiltered(1L);
 +    }
 +
 +    @GetMapping(MESSAGES_PATH_FILTERED)
-+    public List<Message> getMessagesFiltered(@PathVariable Long fromId) {
++    public List<Message> getMessagesFiltered(@PathVariable String fromId) {
          return messageRepository.getMessages(fromId);
      }
  

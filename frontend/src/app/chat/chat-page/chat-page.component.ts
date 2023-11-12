@@ -42,10 +42,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  getNotificationId(message: string): number | undefined {
+  getNotificationId(message: string): string | undefined {
     const matches = message.match(regex);
     if (matches) {
-      return parseInt(matches[1]) + 1;
+      return (parseInt(matches[1]) + 1).toString();
     }
     return undefined;
   }

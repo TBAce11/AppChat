@@ -30,19 +30,23 @@ public class MessageRepository {
 
     public List<Message> getMessages(String fromId) {
         List<Message> retrievedMessages = new ArrayList<Message>();
-
-        ApiFuture<QuerySnapshot> future = messagesCollection.get();
+        ApiFuture<QuerySnapshot> future;
 
         try {
+            if (fromId != null) {
+                DocumentSnapshot documentSnapshot = messagesCollection.document(fromId).get().get();
+                future = messagesCollection.startAfter(documentSnapshot).get();
+            } else {
+                future = messagesCollection.limit(20).get();
+            }
+
+            // Résultats de la requête
             QuerySnapshot querySnapshot = future.get();
 
             for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
                 // Conversion du document Firestore en objet Message
                 Message message = documentToMessage(document);
-
-                if (fromId == null || message.id().compareTo(fromId) >= 0) {
-                    retrievedMessages.add(message);
-                }
+                retrievedMessages.add(message);
             }
 
         } catch (InterruptedException | ExecutionException e) {
@@ -78,12 +82,15 @@ public class MessageRepository {
 
     // Conversion du document Firestore en objet Message
     private Message documentToMessage(DocumentSnapshot document) {
-        String id = document.getId();
-        String username = document.getString("username");
-        Long timestamp = document.getTimestamp("timestamp").getSeconds();
-        String text = document.getString("text");
+    String id = document.getId();
+    String username = document.getString("username");
 
-        return new Message(id, username, timestamp, text);
+    Timestamp timestamp = document.getTimestamp("timestamp");
+    Long timestampSeconds = (timestamp != null) ? timestamp.getSeconds() : null;
+
+    String text = document.getString("text");
+
+    return new Message(id, username, timestampSeconds, text);
     }
 
 }
