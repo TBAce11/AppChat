@@ -11,6 +11,8 @@ import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
 
 import com.inf5190.chat.messages.model.Message;
+import com.inf5190.chat.messages.model.NewMessageRequest;
+
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -56,23 +58,28 @@ public class MessageRepository {
         return retrievedMessages;
     }
 
-    public Message createMessage(Message message) {
+    public Message createMessage(NewMessageRequest newMessageRequest) {
         FirestoreMessage firestoreMessage = new FirestoreMessage();
-        firestoreMessage.setUsername(message.username());
-        firestoreMessage.setText(message.text());
+        firestoreMessage.setUsername(newMessageRequest.username());
+        firestoreMessage.setTimestamp(Timestamp.now());
+        firestoreMessage.setText(newMessageRequest.text());
+        firestoreMessage.setImageUrl(null);
 
         ApiFuture<DocumentReference> future = messagesCollection.add(firestoreMessage);
 
         try {
-            DocumentReference newMessageReference = future.get();
+            DocumentReference createdMessageReference = future.get();
 
-            ApiFuture<DocumentSnapshot> documentSnapshotFuture = newMessageReference.get();
+            ApiFuture<DocumentSnapshot> documentSnapshotFuture = createdMessageReference.get();
             Timestamp timestamp = documentSnapshotFuture.get().getUpdateTime();
 
-            Message newMessage = new Message(newMessageReference.getId(), message.username(), timestamp.getSeconds(),
-                    message.text());
+            Message createdMessage = new Message(createdMessageReference.getId(),
+                    newMessageRequest.text(),
+                    newMessageRequest.username(),
+                    timestamp.getSeconds(),
+                    null);
 
-            return newMessage;
+            return createdMessage;
 
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -82,15 +89,16 @@ public class MessageRepository {
 
     // Conversion du document Firestore en objet Message
     private Message documentToMessage(DocumentSnapshot document) {
-    String id = document.getId();
-    String username = document.getString("username");
+        String id = document.getId();
+        String text = document.getString("text");
+        String username = document.getString("username");
 
-    Timestamp timestamp = document.getTimestamp("timestamp");
-    Long timestampSeconds = (timestamp != null) ? timestamp.getSeconds() : null;
+        Timestamp timestamp = document.getTimestamp("timestamp");
+        Long timestampSeconds = timestamp.getSeconds();
 
-    String text = document.getString("text");
+        String imageUrl = null; // document.getString("imageUrl");
 
-    return new Message(id, username, timestampSeconds, text);
+        return new Message(id, text, username, timestampSeconds, imageUrl);
     }
 
 }

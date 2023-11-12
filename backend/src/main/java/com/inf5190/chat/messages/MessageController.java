@@ -4,6 +4,7 @@ import com.inf5190.chat.auth.session.SessionDataAccessor;
 import com.inf5190.chat.messages.repository.MessageRepository;
 import com.inf5190.chat.websocket.WebSocketManager;
 import com.inf5190.chat.messages.model.Message;
+import com.inf5190.chat.messages.model.NewMessageRequest;
 
 import java.util.List;
 
@@ -38,8 +39,8 @@ public class MessageController {
     }
 
     @PostMapping(MESSAGES_PATH)
-    public Message createMessage(@RequestBody Message message) {
-        Message newMessage = messageRepository.createMessage(message);
+    public Message createMessage(@RequestBody NewMessageRequest newMessageRequest) {
+        Message newMessage = messageRepository.createMessage(newMessageRequest);
         webSocketManager.notifySessions(newMessage.id());
         return newMessage;
     }

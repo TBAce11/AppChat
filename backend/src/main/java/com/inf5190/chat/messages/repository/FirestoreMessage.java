@@ -6,14 +6,16 @@ public class FirestoreMessage {
     private String username;
     private Timestamp timestamp;
     private String text;
+    private String imageUrl;
 
     public FirestoreMessage() {
     }
 
-    public FirestoreMessage(String username, Timestamp timestamp, String text) {
+    public FirestoreMessage(String username, Timestamp timestamp, String text, String imageUrl) {
         this.username = username;
         this.timestamp = timestamp;
         this.text = text;
+        this.imageUrl = imageUrl;
     }
 
     public String getUsername() {
@@ -38,5 +40,13 @@ public class FirestoreMessage {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
