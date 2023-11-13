@@ -29,7 +29,7 @@ public class WebSocketManager {
      * Fonction pour envoyer une notification à toutes les sessions websocket actives.
      * https://stackoverflow.com/questions/29002063/websocket-the-remote-endpoint-was-in-state-text-partial-writing
      */
-    public void notifySessions(Long messageId) {
+    public void notifySessions(String messageId) {
         for (WebSocketSession wss : sessions.values()) {
             try {
                 synchronized (wss) {

@@ -5,4 +5,9 @@
       <mat-icon>send</mat-icon>
     </button>
   </mat-form-field>
+
+  <input #fileInput name="fileInput" type="file" style="display: none" accept="image/*" (change)="fileChanged($event)" />
+  <span matSuffix (click)="fileInput.click()">
+    <mat-icon>image</mat-icon>
+  </span>
 </form>

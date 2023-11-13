@@ -1,11 +1,12 @@
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { Subscription } from "rxjs";
 import { AuthenticationService } from "src/app/login/authentication.service";
-import { Message } from "../message.model";
+import { ChatImageData, Message, NewMessageRequest } from "../message.model";
 import { MessagesService } from "../messages.service";
 import { Router } from "@angular/router";
 import { WebSocketService } from "src/environments/websocket.service";
 import { WebSocketEvent } from "src/environments/websocket.service";
+import { FileReaderService } from "../file-reader.service"; // Update with the correct path
 
 const regex = /notif:(\d+)/;
 
@@ -24,11 +25,14 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   messages: Message[] = [];
   messagesSubscription: Subscription;
 
+  file: File | null = null;
+
   constructor(
     private router: Router,
     private messagesService: MessagesService,
     private authenticationService: AuthenticationService,
-    private webSocketService: WebSocketService
+    private webSocketService: WebSocketService,
+    private fileReaderService: FileReaderService
   ) {
     this.usernameSubscription = this.username$.subscribe((u) => {
       this.username = u;
@@ -42,16 +46,15 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  getNotificationId(message: string): number | undefined {
+  getNotificationId(message: string): string | undefined {
     const matches = message.match(regex);
     if (matches) {
-      return parseInt(matches[1]) + 1;
+      return (parseInt(matches[1]) + 1).toString();
     }
     return undefined;
   }
 
   ngOnInit(): void {
-    this.onPublishMessage("user just connected");
     // Connexion WebSocket
     this.webSocketService.connect().subscribe((event: WebSocketEvent) => {
       if (event.startsWith("notif")) {
@@ -72,23 +75,35 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.webSocketService.disconnect();
   }
 
-  onPublishMessage(message: string) {
-    if (this.username != null) {
-      this.messagesService.postMessage({
+  onPublishMessage(message: string | null) {
+    if (message !== null) {
+      let imageData: ChatImageData | null = null;
+
+      if (this.file) {
+        this.fileReaderService.readFile(this.file).then((chatImageData) => {
+          imageData = chatImageData;
+          this.file = null; // Nettoyage après lecture
+          this.postMessageWithImage(message, imageData);
+        });
+      } else {
+        this.postMessageWithImage(message, imageData);
+      }
+    }
+  }
+
+  private postMessageWithImage(message: string, imageData: ChatImageData | null) {
+    if (this.username !== null) {
+      const newMessage: NewMessageRequest = {
         text: message,
         username: this.username,
-        timestamp: Date.now(),
-      });
+        imageData: imageData,
+      };
 
-      /*//Solution temporaire pré-étape 3
-      this.messagesService.fetchMessages().subscribe((messages) => {
-        this.messages = messages;
-      });*/
+      this.messagesService.postMessage(newMessage);
     }
   }
 
   onLogout() {
-    this.onPublishMessage("user just disconnected");
     this.authenticationService.logout();
     this.router.navigate(["/"]);
   }
