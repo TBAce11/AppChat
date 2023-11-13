@@ -8,7 +8,7 @@ import { WebSocketService } from "src/environments/websocket.service";
 import { WebSocketEvent } from "src/environments/websocket.service";
 import { FileReaderService } from "../file-reader.service"; // Update with the correct path
 
-const regex = /notif:(\d+)/;
+const regex = /notif:(.*)/;
 
 @Component({
   selector: "app-chat-page",
@@ -49,8 +49,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   getNotificationId(message: string): string | undefined {
     const matches = message.match(regex);
     if (matches) {
-      return (parseInt(matches[1]) + 1).toString();
+      return matches[1];
     }
+    console.error("No notification ID found in message", message);
     return undefined;
   }
 
@@ -59,6 +60,8 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.webSocketService.connect().subscribe((event: WebSocketEvent) => {
       if (event.startsWith("notif")) {
         this.messagesService.fetchMessages(this.getNotificationId(event));
+      } else {
+        this.messagesService.fetchMessages(); 
       }
     });
   }

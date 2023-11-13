@@ -1,5 +1,6 @@
 package com.inf5190.chat.messages.repository;
 
+import org.slf4j.Logger;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.CollectionReference;
@@ -8,6 +9,7 @@ import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
+import com.google.cloud.firestore.Query.Direction;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.cloud.StorageClient;
 
@@ -16,10 +18,11 @@ import com.google.cloud.storage.Bucket.BlobTargetOption;
 import com.google.cloud.storage.Storage;
 //import com.google.cloud.storage.Storage.PredefinedAcl;
 //import com.google.cloud.storage.StorageOptions;
-
+import com.inf5190.chat.ChatApplication;
 import com.inf5190.chat.messages.model.Message;
 import com.inf5190.chat.messages.model.NewMessageRequest;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import io.jsonwebtoken.io.Decoders;
@@ -34,6 +37,7 @@ import java.util.concurrent.ExecutionException;
  */
 @Repository
 public class MessageRepository {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChatApplication.class);
     private static final String COLLECTION_NAME = "messages";
     private static final String BUCKET_NAME = "inf5190-chat-51bc0.appspot.com";
     private final Firestore firestore = FirestoreClient.getFirestore();
@@ -46,14 +50,14 @@ public class MessageRepository {
         try {
             if (fromId != null) {
                 DocumentSnapshot documentSnapshot = messagesCollection.document(fromId).get().get();
-                future = messagesCollection.startAfter(documentSnapshot).get();
+                LOGGER.info(documentSnapshot.toString());
+                future = messagesCollection.orderBy("timestamp", Direction.ASCENDING).startAt(documentSnapshot).get();
             } else {
                 future = messagesCollection.limit(20).get();
             }
 
             // Résultats de la requête
             QuerySnapshot querySnapshot = future.get();
-
             for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
                 // Conversion du document Firestore en objet Message
                 Message message = documentToMessage(document);

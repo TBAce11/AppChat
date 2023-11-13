@@ -20,7 +20,7 @@ export class MessagesService {
         id: "",
         text: newMessage.text,
         username: newMessage.username,
-        timestamp: 0,
+        timestamp: Date.now(),
         imageUrl: null,
       };
 
@@ -33,7 +33,7 @@ export class MessagesService {
           }
         )
         .subscribe((res) => {
-          this.messages.next([...this.messages.value, res]);
+          // this.messages.next([...this.messages.value, res]);
         });
     } catch (err) {
       throw new Error("Une erreur est survenue en envoyant le message.");
@@ -48,7 +48,7 @@ export class MessagesService {
     console.log(messageId);
     let url = `${environment.backendUrl}/${this.messagesPath}`;
     if (messageId) {
-      url += `/${messageId}`;
+      url += `?fromId=${messageId}`;
     }
     this.http
       .get<Message[]>(url, {
