@@ -4,7 +4,7 @@
   <ng-container *ngFor="let message of messages; let i = index">
     <!-- Affichage de la date -->
     <div *ngIf="showDateHeader(messages, i)" class="date-header">
-      {{ message.timestamp | date: 'mediumDate' }}
+      {{ message.timestamp }}
     </div>
 
     <!-- Affichage du message texte -->
