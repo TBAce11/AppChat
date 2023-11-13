@@ -9,12 +9,20 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
+import com.google.firebase.cloud.StorageClient;
+
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.Bucket.BlobTargetOption;
+import com.google.cloud.storage.Storage;
+//import com.google.cloud.storage.Storage.PredefinedAcl;
+//import com.google.cloud.storage.StorageOptions;
 
 import com.inf5190.chat.messages.model.Message;
 import com.inf5190.chat.messages.model.NewMessageRequest;
 
 import org.springframework.stereotype.Repository;
 
+import io.jsonwebtoken.io.Decoders;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -27,6 +35,7 @@ import java.util.concurrent.ExecutionException;
 @Repository
 public class MessageRepository {
     private static final String COLLECTION_NAME = "messages";
+    private static final String BUCKET_NAME = "inf5190-chat-51bc0.appspot.com";
     private final Firestore firestore = FirestoreClient.getFirestore();
     private final CollectionReference messagesCollection = firestore.collection(COLLECTION_NAME);
 
@@ -63,12 +72,29 @@ public class MessageRepository {
         firestoreMessage.setUsername(newMessageRequest.username());
         firestoreMessage.setTimestamp(Timestamp.now());
         firestoreMessage.setText(newMessageRequest.text());
-        firestoreMessage.setImageUrl(null);
 
         ApiFuture<DocumentReference> future = messagesCollection.add(firestoreMessage);
 
         try {
             DocumentReference createdMessageReference = future.get();
+
+            // Entreposage de l'image dans Cloud Storage
+            if (newMessageRequest.imageData() != null) {
+                try {
+                    Bucket b = StorageClient.getInstance().bucket(BUCKET_NAME);
+                    String path = String.format("images/%s.%s", createdMessageReference.getId(),
+                            newMessageRequest.imageData().type());
+
+                    b.create(path, Decoders.BASE64.decode(newMessageRequest.imageData().data()),
+                            BlobTargetOption.predefinedAcl(Storage.PredefinedAcl.PUBLIC_READ));
+
+                    String imageUrl = String.format("https://storage.googleapis.com/%s/%s", BUCKET_NAME, path);
+                    firestoreMessage.setImageUrl(imageUrl);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
 
             ApiFuture<DocumentSnapshot> documentSnapshotFuture = createdMessageReference.get();
             Timestamp timestamp = documentSnapshotFuture.get().getUpdateTime();

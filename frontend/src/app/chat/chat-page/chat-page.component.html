@@ -7,9 +7,7 @@
   <div class="chat-messages">
     <div>
       <app-messages [messages]="messages"></app-messages>
-      <app-new-message-form
-        (newMessage)="onPublishMessage($event)"
-      ></app-new-message-form>
+      <app-new-message-form (newMessage)="onPublishMessage($event.text)"></app-new-message-form>
     </div>
   </div>
 </div>
