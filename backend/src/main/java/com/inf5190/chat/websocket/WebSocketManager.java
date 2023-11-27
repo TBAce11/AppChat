@@ -1,7 +1,7 @@
 package com.inf5190.chat.websocket;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.LinkedHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,28 +15,27 @@ import org.springframework.web.socket.WebSocketSession;
 @Service
 public class WebSocketManager {
     private final Logger logger = LoggerFactory.getLogger(WebSocketManager.class);
-    private final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    private final LinkedHashMap<String, WebSocketSession> sessions = new LinkedHashMap<String, WebSocketSession>();
 
     public void addSession(WebSocketSession session) {
-        sessions.put(session.getId(), session);
+        this.sessions.put(session.getId(), session);
     }
 
     public void removeSession(WebSocketSession session) {
-        sessions.remove(session.getId());
+        this.sessions.remove(session.getId());
     }
 
     /**
-     * Fonction pour envoyer une notification à toutes les sessions websocket actives.
-     * https://stackoverflow.com/questions/29002063/websocket-the-remote-endpoint-was-in-state-text-partial-writing
+     * Fonction pour envoyer une notification à toutes les sessions websocket
+     * actives.
+     * 
      */
     public void notifySessions(String messageId) {
-        for (WebSocketSession wss : sessions.values()) {
+        for (WebSocketSession s : sessions.values()) {
             try {
-                synchronized (wss) {
-                    wss.sendMessage(new TextMessage("notif:" + messageId));
-                }
+                s.sendMessage(new TextMessage("notif:" + messageId));
             } catch (IOException e) {
-                logger.error("Could not notify session.", e);
+                logger.info("Could not notify session.", e);
             }
         }
     }

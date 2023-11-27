@@ -1,61 +1,56 @@
 import { Injectable } from "@angular/core";
-import { BehaviorSubject, Observable, tap } from "rxjs";
+import { BehaviorSubject, Observable, firstValueFrom } from "rxjs";
 import { Message, NewMessageRequest } from "./message.model";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpParams } from "@angular/common/http";
 import { environment } from "src/environments/environment";
 
 @Injectable({
   providedIn: "root",
 })
 export class MessagesService {
-  messages = new BehaviorSubject<Message[]>([]);
-  messagesPath = "messages";
+  private messages = new BehaviorSubject<Message[]>([]);
 
-  constructor(private http: HttpClient) {}
+  constructor(private httpClient: HttpClient) {}
 
-  postMessage(newMessage: NewMessageRequest): void {
-    console.log(newMessage);
-    try {
-      const message: Message = {
-        id: "",
-        text: newMessage.text,
-        username: newMessage.username,
-        timestamp: Date.now(),
-        imageUrl: null,
-      };
+  async postMessage(message: NewMessageRequest): Promise<Message> {
+    return firstValueFrom(
+      this.httpClient.post<Message>(
+        `${environment.backendUrl}/messages`,
+        message,
+        {
+          withCredentials: true,
+        }
+      )
+    );
+  }
 
-      this.http
-        .post<Message>(
-          `${environment.backendUrl}/${this.messagesPath}`,
-          message,
-          {
-            withCredentials: true,
-          }
-        )
-        .subscribe((res) => {
-          // this.messages.next([...this.messages.value, res]);
-        });
-    } catch (err) {
-      throw new Error("Une erreur est survenue en envoyant le message.");
-    }
+  async fetchMessages() {
+    const lastMessageId =
+      this.messages.value.length > 0
+        ? this.messages.value[this.messages.value.length - 1].id
+        : null;
+
+    const isIncrementalFetch = lastMessageId != null;
+    let queryParameters = isIncrementalFetch
+      ? new HttpParams().set("fromId", lastMessageId)
+      : new HttpParams();
+
+    const messages = await firstValueFrom(
+      this.httpClient.get<Message[]>(`${environment.backendUrl}/messages`, {
+        params: queryParameters,
+        withCredentials: true,
+      })
+    );
+    this.messages.next(
+      isIncrementalFetch ? [...this.messages.value, ...messages] : messages
+    );
   }
 
   getMessages(): Observable<Message[]> {
     return this.messages.asObservable();
   }
 
-  fetchMessages(messageId?: string): void {
-    console.log(messageId);
-    let url = `${environment.backendUrl}/${this.messagesPath}`;
-    if (messageId) {
-      url += `?fromId=${messageId}`;
-    }
-    this.http
-      .get<Message[]>(url, {
-        withCredentials: true,
-      })
-      .subscribe((messages) => {
-        this.messages.next(messages);
-      });
+  clear() {
+    this.messages.next([]);
   }
 }

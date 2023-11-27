@@ -43,23 +43,17 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest)
             throws InterruptedException, ExecutionException {
 
-        String username = loginRequest.username();
-        String password = loginRequest.password();
-        FirestoreUserAccount existingAccount = userAccountRepository.getUserAccount(username);
+        FirestoreUserAccount account = this.userAccountRepository.getUserAccount(loginRequest.username());
 
-        if (existingAccount == null) {
-            String encodedPassword = passwordEncoder.encode(password);
-            FirestoreUserAccount newAccount = new FirestoreUserAccount(username, encodedPassword);
-            userAccountRepository.setUserAccount(newAccount);
-        } else {
-            String storedEncodedPassword = existingAccount.getEncodedPassword();
-            if (!passwordEncoder.matches(password, storedEncodedPassword)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "\"Mot de passe erronné. Veuillez réessayer.\"");
-            }
+        if (account == null) {
+            String encodedPassword = this.passwordEncoder.encode(loginRequest.password());
+            this.userAccountRepository
+                    .createUserAccount(new FirestoreUserAccount(loginRequest.username(), encodedPassword));
+        } else if (!this.passwordEncoder.matches(loginRequest.password(), account.getEncodedPassword())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
         SessionData sessionData = new SessionData(loginRequest.username());
-
         String sessionId = sessionManager.addSession(sessionData);
 
         ResponseCookie cookie = ResponseCookie.from(SESSION_ID_COOKIE_NAME, sessionId)
@@ -78,21 +72,19 @@ public class AuthController {
     }
 
     @PostMapping(AUTH_LOGOUT_PATH)
-    public ResponseEntity<Void> logout(@CookieValue("sid") Cookie sessionCookie) {
-        String sessionId = sessionCookie.getValue();
+    public ResponseEntity<Void> logout() {
+        ResponseCookie deleteSessionCookie = this.createResponseSessionCookie(null, 0);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, deleteSessionCookie.toString()).body(null);
 
-        sessionManager.removeSession(sessionId);
+    }
 
-        ResponseCookie cookie = ResponseCookie.from(SESSION_ID_COOKIE_NAME, null) // ou ""
-                .secure(true)
-                .httpOnly(true)
+    private ResponseCookie createResponseSessionCookie(String sessiondId, long maxAge) {
+        return ResponseCookie.from(SESSION_ID_COOKIE_NAME, sessiondId)
                 .path("/")
-                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .maxAge(maxAge)
                 .build();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.SET_COOKIE, cookie.toString());
-
-        return ResponseEntity.ok().headers(headers).build();
     }
 }

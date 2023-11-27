@@ -18,9 +18,8 @@ export class MessagesComponent implements AfterViewChecked {
   @ViewChild("chatContainer") private chatContainer: ElementRef | undefined =
     undefined;
 
-  // Doit défiler vers le bas lors de la création du composant.
-  private shouldScrollToBottomAfterViewChecked = true;
-
+  private shouldScroll = false;
+  private numberOfNewImagesToLoad = 0;
   private _messages: Message[] = [];
 
   @Input()
@@ -30,9 +29,14 @@ export class MessagesComponent implements AfterViewChecked {
 
   set messages(messages: Message[]) {
     if (this.shouldScrollBottom(messages)) {
-      this.shouldScrollToBottomAfterViewChecked = true;
+      this.shouldScroll = true;
+      this.numberOfNewImagesToLoad += this.countNewImagesToLoad(messages);
     }
     this._messages = messages;
+  }
+
+  onImageLoaded() {
+    this.numberOfNewImagesToLoad--;
   }
 
   /** Afficher la date seulement si la date du message précédent est différente du message courant. */
@@ -50,9 +54,12 @@ export class MessagesComponent implements AfterViewChecked {
   }
 
   ngAfterViewChecked() {
-    if (this.shouldScrollToBottomAfterViewChecked) {
+    if (this.shouldScroll) {
       this.scrollToBottom();
-      this.shouldScrollToBottomAfterViewChecked = false;
+      if (this.numberOfNewImagesToLoad === 0) {
+        // only reset the scroll when all new images have been loaded
+        this.shouldScroll = false;
+      }
     }
   }
 
@@ -62,6 +69,12 @@ export class MessagesComponent implements AfterViewChecked {
 
   private newMessageReceived(messages: Message[]): Boolean {
     return messages?.length > this._messages.length;
+  }
+
+  private countNewImagesToLoad(messages: Message[]): number {
+    return messages
+      ?.slice(this._messages.length)
+      .filter((message) => message.imageUrl != null).length;
   }
 
   /**
@@ -84,19 +97,20 @@ export class MessagesComponent implements AfterViewChecked {
    *
    * Si le bas du chat n'est pas visible c'est que l'utilisateur a intentionnellement
    * fait défiler le chat vers le haut donc on ne veut pas forcer un défilement vers le bas.
-   **/
+   */
   private chatBottomVisible(): Boolean {
     return (
-      !!this.chatContainer &&
-      this.chatContainer.nativeElement.scrollHeight -
-        (this.chatContainer.nativeElement.scrollTop +
-          this.chatContainer.nativeElement.clientHeight) <=
-        this.SCROLL_BOTTOM_TOLERANCE_IN_PX
+      this.chatContainer?.nativeElement.scrollHeight -
+        (this.chatContainer?.nativeElement.scrollTop +
+          this.chatContainer?.nativeElement.clientHeight) <=
+      this.SCROLL_BOTTOM_TOLERANCE_IN_PX
     );
   }
 
   private scrollToBottom(): void {
     if (this.chatContainer != null) {
+      this.chatContainer.nativeElement.scrollTop =
+        this.chatContainer.nativeElement.scrollHeight;
       this.chatContainer.nativeElement.scrollTop =
         this.chatContainer.nativeElement.scrollHeight;
     }

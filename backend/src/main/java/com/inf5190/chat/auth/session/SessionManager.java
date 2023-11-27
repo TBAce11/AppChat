@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Repository;
 
@@ -22,10 +23,11 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class SessionManager {
-
-    private final Map<String, SessionData> sessions = new HashMap<String, SessionData>();
-
     private static final String SECRET_KEY_BASE64 = Encoders.BASE64.encode(Jwts.SIG.HS256.key().build().getEncoded());
+    private static final String JWT_AUDIENCE = "inf5190";
+
+    //private final Map<String, SessionData> sessions = new HashMap<String, SessionData>();
+
     private final SecretKey secretKey;
     private final JwtParser jwtParser;
 
@@ -36,22 +38,22 @@ public class SessionManager {
 
     public String addSession(SessionData authData) {
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 heures d'expiration
+        Date expiration = new Date(now.getTime() + TimeUnit.HOURS.toMillis(2)); // 2 heures d'expiration
 
         String compactJws = Jwts.builder()
+                .audience().add(JWT_AUDIENCE).and()
                 .subject(authData.username())
-                .claim("aud", "app-chat-base")
                 .issuedAt(now)
                 .expiration(expiration)
-                .signWith(this.secretKey, Jwts.SIG.HS256)
+                .signWith(this.secretKey)
                 .compact();
 
         return compactJws;
     }
 
-    public void removeSession(String sessionId) {
+    /*public void removeSession(String sessionId) {
         this.sessions.remove(sessionId);
-    }
+    }*/
 
     public SessionData getSession(String token) {
         try {
@@ -59,11 +61,8 @@ public class SessionManager {
             String username = claims.getSubject();
 
             return new SessionData(username);
-
         } catch (JwtException e) {
-
             return null; // La session n'existe pas ou le JWT n'est pas valide
-
         }
     }
 }

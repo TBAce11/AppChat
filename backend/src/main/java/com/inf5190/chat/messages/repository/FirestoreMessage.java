@@ -1,8 +1,12 @@
 package com.inf5190.chat.messages.repository;
 
 import com.google.cloud.Timestamp;
+import com.google.cloud.firestore.annotation.DocumentId;
 
 public class FirestoreMessage {
+    @DocumentId
+    private String id;
+
     private String username;
     private Timestamp timestamp;
     private String text;
@@ -16,6 +20,10 @@ public class FirestoreMessage {
         this.timestamp = timestamp;
         this.text = text;
         this.imageUrl = imageUrl;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getUsername() {

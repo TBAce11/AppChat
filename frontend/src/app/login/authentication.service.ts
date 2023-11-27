@@ -1,8 +1,9 @@
 import { Injectable } from "@angular/core";
-import { BehaviorSubject, Observable } from "rxjs";
+import { BehaviorSubject, Observable, firstValueFrom } from "rxjs";
 import { UserCredentials } from "./model/user-credentials";
 import { HttpClient } from "@angular/common/http";
-import { environment } from "src/environments/environment"; // à re-vérifier
+import { environment } from "src/environments/environment";
+import { LoginResponse } from "./model/login-response";
 
 @Injectable({
   providedIn: "root",
@@ -16,34 +17,26 @@ export class AuthenticationService {
     this.username.next(localStorage.getItem(AuthenticationService.KEY));
   }
 
-  login(userCredentials: UserCredentials): void {
-    try {
-      this.httpClient
-        .post(`${environment.backendUrl}/auth/login`, userCredentials, {
-          withCredentials: true,
-        })
-        .subscribe((res) => {
-          console.log(res);
-          localStorage.setItem(
-            AuthenticationService.KEY,
-            userCredentials.username
-          );
-        });
-      this.username.next(userCredentials.username);
-    } catch (err) {
-      throw new Error("Erreur de connexion: " + err);
-    }
+  async login(userCredentials: UserCredentials) {
+    const response = await firstValueFrom(
+      this.httpClient.post<LoginResponse>(
+        `${environment.backendUrl}/auth/login`,
+        userCredentials,
+        { withCredentials: true }
+      )
+    );
+    localStorage.setItem(AuthenticationService.KEY, response.username);
+    this.username.next(response.username);
   }
 
-  logout(): void {
-    this.httpClient
-      .post(`${environment.backendUrl}/auth/logout`, {
+  async logout() {
+    await firstValueFrom(
+      this.httpClient.post(`${environment.backendUrl}/auth/logout`, null, {
         withCredentials: true,
       })
-      .subscribe((res) => {
-        localStorage.removeItem(AuthenticationService.KEY);
-        this.username.next(null);
-      });
+    );
+    localStorage.removeItem(AuthenticationService.KEY);
+    this.username.next(null);
   }
 
   getUsername(): Observable<string | null> {
