@@ -8,6 +8,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatIconModule } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
+import { HttpClientTestingModule } from "@angular/common/http/testing";
 
 describe("ChatPageComponent", () => {
   let component: ChatPageComponent;
@@ -26,6 +27,7 @@ describe("ChatPageComponent", () => {
         MatIconModule,
         MatInputModule,
         NoopAnimationsModule,
+        HttpClientTestingModule,
       ],
     }).compileComponents();
 

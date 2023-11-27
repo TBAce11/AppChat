@@ -1,14 +1,10 @@
 import { Component, OnDestroy, OnInit } from "@angular/core";
-import { Subscription } from "rxjs";
+import { Observable, Subscription } from "rxjs";
 import { AuthenticationService } from "src/app/login/authentication.service";
-import { ChatImageData, Message, NewMessageRequest } from "../message.model";
 import { MessagesService } from "../messages.service";
 import { Router } from "@angular/router";
-import { WebSocketService } from "src/environments/websocket.service";
-import { WebSocketEvent } from "src/environments/websocket.service";
-import { FileReaderService } from "../file-reader.service"; // Update with the correct path
-
-const regex = /notif:(.*)/;
+import { WebSocketEvent, WebSocketService } from "../websocket.service";
+import { FileReaderService } from "../file-reader.service";
 
 @Component({
   selector: "app-chat-page",
@@ -22,10 +18,8 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   username: string | null = null;
   usernameSubscription: Subscription;
 
-  messages: Message[] = [];
-  messagesSubscription: Subscription;
-
-  file: File | null = null;
+  notifications$: Observable<WebSocketEvent> | null = null;
+  notificationsSubscription: Subscription | null = null;
 
   constructor(
     private router: Router,
@@ -37,77 +31,44 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.usernameSubscription = this.username$.subscribe((u) => {
       this.username = u;
     });
-    this.messagesSubscription = this.messages$.subscribe((m) => {
-      console.log("m", m);
-      console.log("this.messages", this.messages);
-      for (let msg in m) {
-        this.messages.push(m[msg]);
-      }
-    });
   }
 
-  getNotificationId(message: string): string | undefined {
-    const matches = message.match(regex);
-    if (matches) {
-      return matches[1];
-    }
-    console.error("No notification ID found in message", message);
-    return undefined;
-  }
-
-  ngOnInit(): void {
-    // Connexion WebSocket
-    this.webSocketService.connect().subscribe((event: WebSocketEvent) => {
-      if (event.startsWith("notif")) {
-        this.messagesService.fetchMessages(this.getNotificationId(event));
-      } else {
-        this.messagesService.fetchMessages(); 
-      }
+  ngOnInit() {
+    this.notifications$ = this.webSocketService.connect();
+    this.notificationsSubscription = this.notifications$.subscribe(() => {
+      this.messagesService.fetchMessages();
     });
+    this.messagesService.fetchMessages();
   }
 
   ngOnDestroy(): void {
     if (this.usernameSubscription) {
       this.usernameSubscription.unsubscribe();
     }
-    if (this.messagesSubscription) {
-      this.messagesSubscription.unsubscribe();
+    if (this.notificationsSubscription) {
+      this.notificationsSubscription.unsubscribe();
     }
-
-    //Déconnexion WebSocket
     this.webSocketService.disconnect();
   }
 
-  onPublishMessage(message: string | null) {
-    if (message !== null) {
-      let imageData: ChatImageData | null = null;
+  async onPublishMessage(event: { message: string; file: File | null }) {
+    if (this.username != null) {
+      const imageData =
+        event.file != null
+          ? await this.fileReaderService.readFile(event.file)
+          : null;
 
-      if (this.file) {
-        this.fileReaderService.readFile(this.file).then((chatImageData) => {
-          imageData = chatImageData;
-          this.file = null; // Nettoyage après lecture
-          this.postMessageWithImage(message, imageData);
-        });
-      } else {
-        this.postMessageWithImage(message, imageData);
-      }
-    }
-  }
-
-  private postMessageWithImage(message: string, imageData: ChatImageData | null) {
-    if (this.username !== null) {
-      const newMessage: NewMessageRequest = {
-        text: message,
+      await this.messagesService.postMessage({
+        text: event.message,
         username: this.username,
         imageData: imageData,
-      };
-
-      this.messagesService.postMessage(newMessage);
+      });
     }
   }
 
-  onLogout() {
-    this.authenticationService.logout();
+  async onLogout() {
+    this.messagesService.clear();
+    await this.authenticationService.logout();
     this.router.navigate(["/"]);
   }
 }

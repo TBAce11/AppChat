@@ -9,14 +9,16 @@ export class FileReaderService {
 
   async readFile(file: File): Promise<ChatImageData> {
     const reader = new FileReader();
+
     const fileRead = new Promise<ArrayBuffer>((resolve, reject) => {
       reader.onload = (b) => resolve(reader.result as ArrayBuffer);
       reader.onerror = (e) => reject("could not read file");
     });
+
     reader.readAsArrayBuffer(file);
+
     const type = file.name.split(".").pop() || "";
     const b = await fileRead;
-
     return { data: this.arrayBufferToBase64(b), type: type };
   }
 
@@ -26,7 +28,6 @@ export class FileReaderService {
     for (var i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
-
     return window.btoa(binary);
   }
 }

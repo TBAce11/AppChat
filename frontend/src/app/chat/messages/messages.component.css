@@ -1,6 +1,4 @@
 .messages {
-  padding-top: 5vh ;
-  padding-bottom: 5vh;
   height: 70vh;
   overflow-y: scroll;
   text-align: left;
@@ -11,19 +9,6 @@ p {
   margin: 10px;
 }
 
-.date-header { 
-  text-align: center;
-  font-size: 12px;
-  color: #999;
-  margin: 10px;
-
-}
-
-.message-text {
-  display:block;
-  background-color: #f1f0f0;
-  border-radius: 10px;
-  padding: 10px;
-  margin: 10px;
-  width: 50%;  
+img {
+  max-width: 400px;
 }

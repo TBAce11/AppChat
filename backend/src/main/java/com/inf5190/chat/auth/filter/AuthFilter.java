@@ -2,6 +2,7 @@ package com.inf5190.chat.auth.filter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.Filter;
@@ -13,30 +14,28 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 
 import com.inf5190.chat.auth.AuthController;
 import com.inf5190.chat.auth.session.SessionData;
-import com.inf5190.chat.auth.session.SessionDataAccessor;
 import com.inf5190.chat.auth.session.SessionManager;
 
 /**
  * Filtre qui intercepte les requêtes HTTP et valide si elle est autorisée.
  */
 public class AuthFilter implements Filter {
-    private final SessionDataAccessor sessionDataAccessor;
     private final SessionManager sessionManager;
+    private final List<String> allowedOrigins;
 
-    public AuthFilter(SessionDataAccessor sessionDataAccessor, SessionManager sessionManager) {
-        this.sessionDataAccessor = sessionDataAccessor;
+    public AuthFilter(SessionManager sessionManager, List<String> allowedOrigins) {
         this.sessionManager = sessionManager;
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Override
-    public void doFilter(
-            ServletRequest request,
-            ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
         final HttpServletRequest httpRequest = (HttpServletRequest) request;
         final HttpServletResponse httpResponse = (HttpServletResponse) response;
 
@@ -72,8 +71,6 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        this.sessionDataAccessor.setSessionData(httpRequest, sessionData);
-
         chain.doFilter(request, response);
     }
 
@@ -85,6 +82,12 @@ public class AuthFilter implements Filter {
         sessionIdCookie.setMaxAge(0);
 
         response.addCookie(sessionIdCookie);
+
+        String origin = request.getHeader(HttpHeaders.ORIGIN);
+        if (this.allowedOrigins.contains(origin)) {
+            response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+            response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        }
 
         if (request.getRequestURI().contains(AuthController.AUTH_LOGOUT_PATH)) {
             // Si c'est pour le logout, on retourne simplement 200 OK.

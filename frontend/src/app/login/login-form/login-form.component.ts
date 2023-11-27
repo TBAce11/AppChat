@@ -30,8 +30,6 @@ export class LoginFormComponent implements OnInit {
         username: this.loginForm.value.username,
         password: this.loginForm.value.password,
       });
-
-      this.loginForm.reset();
     }
   }
 }
