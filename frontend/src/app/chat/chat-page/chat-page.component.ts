@@ -3,13 +3,8 @@ import { Observable, Subscription } from "rxjs";
 import { AuthenticationService } from "src/app/login/authentication.service";
 import { MessagesService } from "../messages.service";
 import { Router } from "@angular/router";
-import {
-  WebSocketEvent,
-  WebSocketService,
-} from "src/app/chat/websocket.service";
+import { WebSocketEvent, WebSocketService } from "../websocket.service";
 import { FileReaderService } from "../file-reader.service";
-
-//const regex = /notif:(.*)/;
 
 @Component({
   selector: "app-chat-page",
@@ -38,15 +33,6 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  /*getNotificationId(message: string): string | undefined {
-    const matches = message.match(regex);
-    if (matches) {
-      return matches[1];
-    }
-    console.error("No notification ID found in message", message);
-    return undefined;
-  }*/
-
   ngOnInit() {
     this.notifications$ = this.webSocketService.connect();
     this.notificationsSubscription = this.notifications$.subscribe(() => {
@@ -62,7 +48,6 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     if (this.notificationsSubscription) {
       this.notificationsSubscription.unsubscribe();
     }
-
     this.webSocketService.disconnect();
   }
 

@@ -28,12 +28,11 @@ public class WebSocketManager {
     /**
      * Fonction pour envoyer une notification à toutes les sessions websocket
      * actives.
-     * 
      */
-    public void notifySessions(String messageId) {
+    public void notifySessions() {
         for (WebSocketSession s : sessions.values()) {
             try {
-                s.sendMessage(new TextMessage("notif:" + messageId));
+                s.sendMessage(new TextMessage("notif"));
             } catch (IOException e) {
                 logger.info("Could not notify session.", e);
             }

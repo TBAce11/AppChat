@@ -32,8 +32,8 @@ public class MessageController {
     private final WebSocketManager webSocketManager;
     private final SessionManager sessionManager;
 
-    public MessageController(MessageRepository messageRepository, WebSocketManager webSocketManager,
-            SessionManager sessionManager) {
+    public MessageController(MessageRepository messageRepository,
+            WebSocketManager webSocketManager, SessionManager sessionManager) {
         this.messageRepository = messageRepository;
         this.webSocketManager = webSocketManager;
         this.sessionManager = sessionManager;
@@ -47,7 +47,8 @@ public class MessageController {
 
     @PostMapping(MESSAGES_PATH)
     public Message createMessage(@CookieValue(AuthController.SESSION_ID_COOKIE_NAME) String sessionCookie,
-            @RequestBody NewMessageRequest message) throws InterruptedException, ExecutionException {
+            @RequestBody NewMessageRequest message)
+            throws InterruptedException, ExecutionException {
         if (sessionCookie == null || sessionCookie.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
@@ -57,9 +58,9 @@ public class MessageController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        Message newMessage = messageRepository.createMessage(message);
+        Message newMessage = this.messageRepository.createMessage(message);
 
-        this.webSocketManager.notifySessions(newMessage.id());
+        this.webSocketManager.notifySessions();
 
         return newMessage;
     }

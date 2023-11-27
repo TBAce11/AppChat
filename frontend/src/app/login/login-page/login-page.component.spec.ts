@@ -6,6 +6,7 @@ import { ReactiveFormsModule } from "@angular/forms";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
+import { HttpClientTestingModule } from "@angular/common/http/testing";
 
 describe("LoginPageComponent", () => {
   let component: LoginPageComponent;
@@ -19,6 +20,7 @@ describe("LoginPageComponent", () => {
         MatFormFieldModule,
         MatInputModule,
         NoopAnimationsModule,
+        HttpClientTestingModule,
       ],
     }).compileComponents();
 
