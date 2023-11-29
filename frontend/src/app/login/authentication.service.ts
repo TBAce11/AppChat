@@ -42,4 +42,8 @@ export class AuthenticationService {
   getUsername(): Observable<string | null> {
     return this.username.asObservable();
   }
+
+  isConnected(): boolean {
+    return !!localStorage.getItem(AuthenticationService.KEY);
+  }
 }
