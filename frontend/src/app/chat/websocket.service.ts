@@ -36,7 +36,7 @@ export class WebSocketService {
 
     this.ws.onclose = () => {
       if (attempt <= this.retryAttempts) {
-        console.log("Nouvelle tentative de connexion");
+        console.log("Nouvelle tentative de connexion en cours...");
         // Nouvelle tentative de connexion après l'intervalle spécifiée
         setTimeout(() => this.retryConnection(attempt + 1), this.retryInterval);
       } else {
@@ -46,7 +46,7 @@ export class WebSocketService {
       }
     };
     this.ws.onerror = () => {
-      console.log("Erreur: perte de connexion en cours");
+      console.log("Erreur: perte de connexion");
       this.events.error("error");
     };
   }
