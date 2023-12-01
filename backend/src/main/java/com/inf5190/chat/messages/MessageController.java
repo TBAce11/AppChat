@@ -42,26 +42,42 @@ public class MessageController {
     @GetMapping(MESSAGES_PATH)
     public List<Message> getMessages(@RequestParam Optional<String> fromId)
             throws InterruptedException, ExecutionException {
-        return this.messageRepository.getMessages(fromId.orElse(null));
+        try {
+            return this.messageRepository.getMessages(fromId.orElse(null));
+
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unexpected error on get message.", e);
+        }
     }
 
     @PostMapping(MESSAGES_PATH)
     public Message createMessage(@CookieValue(AuthController.SESSION_ID_COOKIE_NAME) String sessionCookie,
             @RequestBody NewMessageRequest message)
             throws InterruptedException, ExecutionException {
-        if (sessionCookie == null || sessionCookie.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        try {
+            if (sessionCookie == null || sessionCookie.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+
+            SessionData sessionData = this.sessionManager.getSession(sessionCookie);
+            if (sessionData == null || !sessionData.username().equals(message.username())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+
+            Message newMessage = this.messageRepository.createMessage(message);
+
+            this.webSocketManager.notifySessions();
+
+            return newMessage;
+
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unexpected error during message creation.", e);
         }
-
-        SessionData sessionData = this.sessionManager.getSession(sessionCookie);
-        if (sessionData == null || !sessionData.username().equals(message.username())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        Message newMessage = this.messageRepository.createMessage(message);
-
-        this.webSocketManager.notifySessions();
-
-        return newMessage;
     }
 }
