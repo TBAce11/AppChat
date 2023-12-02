@@ -45,7 +45,7 @@ export class LoginFormComponent implements OnInit {
   }
 
   handleLoginError(error: any) {
-    console.log("Error caught:", error);
+    console.log("Erreur détectée:", error);
     if (error instanceof HttpErrorResponse) {
       if (error.status === 403) {
         this.errorMessage = "Mot de passe invalide";
