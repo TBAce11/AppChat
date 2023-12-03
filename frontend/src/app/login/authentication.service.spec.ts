@@ -38,7 +38,7 @@ describe("AuthenticationService", () => {
       expect(req.request.body).toEqual(loginData);
       req.flush({ username: loginData.username });
 
-      // wait for the login to complete
+      // attente de la fin de la connexion
       await loginPromise;
     });
 
@@ -50,10 +50,9 @@ describe("AuthenticationService", () => {
       );
       req.flush({ username: loginData.username });
 
-      // wait for the login to complete
       await loginPromise;
 
-      // check if the username is stored and emitted
+      // vérifier si le nom d'utilisateur est stocké et émis
       expect(localStorage.getItem(AuthenticationService.KEY)).toEqual(
         loginData.username
       );
@@ -80,9 +79,9 @@ describe("AuthenticationService", () => {
         `${environment.backendUrl}/auth/logout`
       );
       expect(req.request.method).toBe("POST");
-      req.flush({}); // assuming the server responds with an empty object
+      req.flush({}); //supposition que le serveur réponde par un objet vide
 
-      // wait for the logout to complete
+      // attente de la fin de la déconnexion
       await logoutPromise;
     });
 
@@ -92,12 +91,11 @@ describe("AuthenticationService", () => {
       const req = httpTestingController.expectOne(
         `${environment.backendUrl}/auth/logout`
       );
-      req.flush({}); // assuming the server responds with an empty object
+      req.flush({});
 
-      // wait for the logout to complete
       await logoutPromise;
 
-      // check if the username is removed from service and local storage
+      // vérifier si le nom d'utilisateur est supprimé du service et du stockage local
       expect(localStorage.getItem(AuthenticationService.KEY)).toBeNull();
 
       service.getUsername().subscribe((username) => {

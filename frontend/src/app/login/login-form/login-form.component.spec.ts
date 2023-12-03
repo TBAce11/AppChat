@@ -33,25 +33,20 @@ describe("LoginFormComponent", () => {
     let username: string;
     let password: string;
 
-    // Subscribe to the EventEmitter to receive the emitted values.
     component.login.subscribe((event) => {
       username = event.username;
       password = event.password;
     });
 
-    // Simulate user input
     const usernameInput = testHelper.getInput('username-input');
     const passwordInput = testHelper.getInput('password-input');
     testHelper.writeInInput(usernameInput, 'username');
     testHelper.writeInInput(passwordInput, 'pwd');
 
-    // Trigger the login method
     component.onLogin();
 
-    // Check if the emitted values match the expected values
     expect(username!).toBe('username');
     expect(password!).toBe('pwd');
-    // Check if the form is valid after triggering login
     expect(component.loginForm.valid).toBe(true);
   });
 
@@ -62,16 +57,12 @@ describe("LoginFormComponent", () => {
       emitted = true;
     });
 
-    // Simulate user input without providing a username
     const passwordInput = testHelper.getInput('password-input');
     testHelper.writeInInput(passwordInput, 'pwd');
 
-    // Trigger the login method
     component.onLogin();
 
-    // Check that no values were emitted
     expect(emitted).toBe(false);
-    // Check for appropriate error message
     expect(component.errorMessage).toBe(''); //aucun message d'erreur 403
   });
 
@@ -82,16 +73,12 @@ describe("LoginFormComponent", () => {
       emitted = true;
     });
 
-    // Simulate user input without providing a password
     const usernameInput = testHelper.getInput('username-input');
     testHelper.writeInInput(usernameInput, 'username');
 
-    // Trigger the login method
     component.onLogin();
 
-    // Check that no values were emitted
     expect(emitted).toBe(false);
-    // Check for appropriate error message
     expect(component.errorMessage).toBe(''); 
   });
 
@@ -102,12 +89,9 @@ describe("LoginFormComponent", () => {
       emitted = true;
     });
 
-    // Trigger the login method without providing username and password
     component.onLogin();
 
-    // Check that no values were emitted
     expect(emitted).toBe(false);
-    // Check for appropriate error messages
     expect(component.errorMessage).toBe(''); 
     expect(component.errorMessage).toBe(''); 
   });
