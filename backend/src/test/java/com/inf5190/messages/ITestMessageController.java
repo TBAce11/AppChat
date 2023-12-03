@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -31,6 +32,7 @@ import com.inf5190.chat.messages.model.Message;
 import com.inf5190.chat.messages.model.NewMessageRequest;
 import com.inf5190.chat.messages.repository.FirestoreMessage;
 
+@SpringBootConfiguration()
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @PropertySource("classpath:firebase.properties")
 public class ITestMessageController {
