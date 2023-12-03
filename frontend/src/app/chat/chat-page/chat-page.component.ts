@@ -1,4 +1,4 @@
-import { Component, NgModule, OnDestroy, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import { Observable, Subscription } from "rxjs";
 import { AuthenticationService } from "src/app/login/authentication.service";
 import { MessagesService } from "../messages.service";
@@ -7,17 +7,11 @@ import { WebSocketEvent, WebSocketService } from "../websocket.service";
 import { FileReaderService } from "../file-reader.service";
 import { interval } from "rxjs";
 import { switchMap } from "rxjs/operators";
-import {ErrorInterceptor} from "../../error"
-import { HTTP_INTERCEPTORS, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from "@angular/common/http";
-
 
 @Component({
   selector: "app-chat-page",
   templateUrl: "./chat-page.component.html",
   styleUrls: ["./chat-page.component.css"],
-  providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true }
-  ]
 })
 export class ChatPageComponent implements OnInit, OnDestroy {
   messages$ = this.messagesService.getMessages();
