@@ -4,28 +4,29 @@
       <div>
         <mat-form-field>
           <mat-label>Nom d'usager</mat-label>
-          <input
-            matInput
-            name="username"
-            type="text"
-            formControlName="username"
-          />
+          <input matInput name="username" type="text" formControlName="username" data-testid="username-input" />
+          <mat-error *ngIf="username?.invalid && (username?.dirty || username?.touched)">
+            Entrez un nom d'usager
+          </mat-error>
         </mat-form-field>
       </div>
       <div>
         <mat-form-field>
           <mat-label>Mot de passe</mat-label>
-          <input
-            matInput
-            name="password"
-            type="password"
-            formControlName="password"
-          />
+          <input matInput name="password" type="password" formControlName="password" data-testid="password-input" />
+          <mat-error *ngIf="password?.invalid && (password?.dirty || password?.touched)">
+            Entrez un mot de passe
+          </mat-error>
         </mat-form-field>
       </div>
     </div>
     <div>
       <button mat-raised-button color="primary" type="submit">Connexion</button>
+    </div>
+
+    <!--Affichage de l'erreur actuelle-->
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
     </div>
   </form>
 </div>

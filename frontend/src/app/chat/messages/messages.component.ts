@@ -62,6 +62,18 @@ export class MessagesComponent implements AfterViewChecked {
       }
     }
   }
+  
+  prettyPrintDate(date: number) {
+    const d = new Date(0);
+    d.setUTCSeconds(date)
+    return d.toDateString()
+  }
+
+  prettyPrintTime(date: number) { 
+    const d = new Date(0);
+    d.setUTCSeconds(date)
+    return d.toTimeString().split(' ')[0]
+  }
 
   private shouldScrollBottom(messages: Message[]): Boolean {
     return this.newMessageReceived(messages) && this.chatBottomVisible();

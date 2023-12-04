@@ -46,29 +46,44 @@ public class AuthController {
     @PostMapping(AUTH_LOGIN_PATH)
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest)
             throws InterruptedException, ExecutionException {
-        FirestoreUserAccount account = this.userAccountRepository.getUserAccount(loginRequest.username());
-        if (account == null) {
-            String encodedPassword = this.passwordEncoder.encode(loginRequest.password());
-            this.userAccountRepository
-                    .createUserAccount(new FirestoreUserAccount(loginRequest.username(), encodedPassword));
-        } else if (!this.passwordEncoder.matches(loginRequest.password(), account.getEncodedPassword())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        try {
+            FirestoreUserAccount account = this.userAccountRepository.getUserAccount(loginRequest.username());
+            if (account == null) {
+                String encodedPassword = this.passwordEncoder.encode(loginRequest.password());
+                this.userAccountRepository
+                        .createUserAccount(new FirestoreUserAccount(loginRequest.username(), encodedPassword));
+            } else if (!this.passwordEncoder.matches(loginRequest.password(), account.getEncodedPassword())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+
+            String sessionId = this.sessionManager.addSession(new SessionData(loginRequest.username()));
+
+            ResponseCookie sessionCookie = this.createResponseSessionCookie(sessionId, TimeUnit.DAYS.toSeconds(1));
+
+            return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, sessionCookie.toString())
+                    .body(new LoginResponse(loginRequest.username()));
+
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unexpected error during login.", e);
         }
-
-        String sessionId = this.sessionManager.addSession(new SessionData(loginRequest.username()));
-
-        ResponseCookie sessionCookie = this.createResponseSessionCookie(sessionId, TimeUnit.DAYS.toSeconds(1));
-
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, sessionCookie.toString())
-                .body(new LoginResponse(loginRequest.username()));
     }
 
     @PostMapping(AUTH_LOGOUT_PATH)
     public ResponseEntity<Void> logout() {
-        ResponseCookie deleteSessionCookie = this.createResponseSessionCookie(null, 0);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, deleteSessionCookie.toString()).body(null);
+        try {
+            ResponseCookie deleteSessionCookie = this.createResponseSessionCookie(null, 0);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, deleteSessionCookie.toString()).body(null);
 
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unexpected error during logout.", e);
+        }
     }
 
     private ResponseCookie createResponseSessionCookie(String sessiondId, long maxAge) {

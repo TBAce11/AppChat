@@ -10,6 +10,7 @@ import { LoginResponse } from "./model/login-response";
 })
 export class AuthenticationService {
   static KEY = "username";
+  static PASS = "token";
 
   private username = new BehaviorSubject<string | null>(null);
 
@@ -26,7 +27,20 @@ export class AuthenticationService {
       )
     );
     localStorage.setItem(AuthenticationService.KEY, response.username);
+    localStorage.setItem(AuthenticationService.PASS, userCredentials.password);
+
     this.username.next(response.username);
+  }
+
+  async refreshLogin() {
+    //reconnexion au serveur avec les identifiants stockés dans le stockage local
+    const username = localStorage.getItem(AuthenticationService.KEY) ?? null;
+    const password = localStorage.getItem(AuthenticationService.PASS) ?? null;
+    if (!username || !password) {
+      return this.logout();
+    }
+
+    this.login({ username, password });
   }
 
   async logout() {
@@ -41,5 +55,9 @@ export class AuthenticationService {
 
   getUsername(): Observable<string | null> {
     return this.username.asObservable();
+  }
+
+  isConnected(): boolean {
+    return !!localStorage.getItem(AuthenticationService.KEY);
   }
 }
