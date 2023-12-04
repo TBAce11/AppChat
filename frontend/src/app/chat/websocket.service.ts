@@ -15,10 +15,7 @@ export class WebSocketService {
 
   private events = new Subject<WebSocketEvent>();
 
-  constructor(
-    private authenticationService: AuthenticationService
-  ) {
-  }
+  constructor(private authenticationService: AuthenticationService) {}
 
   public connect(): Observable<WebSocketEvent> {
     this.retryConnection();

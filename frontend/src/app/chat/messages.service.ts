@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { BehaviorSubject, Observable, lastValueFrom } from "rxjs";
+import { BehaviorSubject, Observable, firstValueFrom } from "rxjs";
 import { Message, NewMessageRequest } from "./message.model";
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { environment } from "src/environments/environment";
@@ -12,28 +12,22 @@ export class MessagesService {
 
   constructor(private httpClient: HttpClient) {}
 
-  async postMessage(message: NewMessageRequest): Promise<Message | undefined> {
-    try {
-      const result = await lastValueFrom(
-        this.httpClient.post<Message>(
-          `${environment.backendUrl}/messages`,
-          message,
-          {
-            withCredentials: true,
-          }
-        )
-      );
-      return result;
-    } catch (error) {
-      console.error("Error posting message:", error);
-      throw error;
-    }
+  async postMessage(message: NewMessageRequest): Promise<Message> {
+    return firstValueFrom(
+      this.httpClient.post<Message>(
+        `${environment.backendUrl}/messages`,
+        message,
+        {
+          withCredentials: true,
+        }
+      )
+    );
   }
 
-  async fetchMessages(): Promise<void> {
+  async fetchMessages() {
     const lastMessageId =
       this.messages.value.length > 0
-        ? this.messages.value[this.messages.value.length - 1]?.id
+        ? this.messages.value[this.messages.value.length - 1].id
         : null;
 
     const isIncrementalFetch = lastMessageId != null;
@@ -41,23 +35,15 @@ export class MessagesService {
       ? new HttpParams().set("fromId", lastMessageId)
       : new HttpParams();
 
-    try {
-      const messages = await lastValueFrom(
-        this.httpClient.get<Message[]>(`${environment.backendUrl}/messages`, {
-          params: queryParameters,
-          withCredentials: true,
-        })
-      );
-
-      this.messages.next(
-        isIncrementalFetch
-          ? [...this.messages.value, ...messages.filter((m) => m != null)]
-          : messages.filter((m) => m != null)
-      );
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      throw error;
-    }
+    const messages = await firstValueFrom(
+      this.httpClient.get<Message[]>(`${environment.backendUrl}/messages`, {
+        params: queryParameters,
+        withCredentials: true,
+      })
+    );
+    this.messages.next(
+      isIncrementalFetch ? [...this.messages.value, ...messages] : messages
+    );
   }
 
   getMessages(): Observable<Message[]> {

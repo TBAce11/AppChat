@@ -80,6 +80,7 @@ public class ITestMessageController {
                 "http://localhost:" + this.emulatorPort + "/emulator/v1/projects/"
                         + this.firebaseProjectId
                         + "/databases/(default)/documents");
+    }
 
     @Test
     public void getMessagesWithValidToken() {

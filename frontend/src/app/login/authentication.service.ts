@@ -32,15 +32,15 @@ export class AuthenticationService {
     this.username.next(response.username);
   }
 
-
   async refreshLogin() {
+    //reconnexion au serveur avec les identifiants stockés dans le stockage local
     const username = localStorage.getItem(AuthenticationService.KEY) ?? null;
     const password = localStorage.getItem(AuthenticationService.PASS) ?? null;
     if (!username || !password) {
-        return this.logout()
+      return this.logout();
     }
 
-    this.login({username, password})
+    this.login({ username, password });
   }
 
   async logout() {
