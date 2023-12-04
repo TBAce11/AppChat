@@ -28,8 +28,12 @@ export class WebSocketService {
     this.ws.onopen = () => {
       attempt = 1;
       console.log("Connexion établie");
-      // refresh login
-      setTimeout(() => this.authenticationService.refreshLogin(), this.retryInterval);
+
+      // réinitialisation de la connexion au serveur avec les mêmes identifiants
+      setTimeout(
+        () => this.authenticationService.refreshLogin(),
+        this.retryInterval
+      );
 
       // Notification de connexion établie
       this.events.next("notif");
