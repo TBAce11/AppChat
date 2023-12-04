@@ -16,10 +16,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.HttpCookie;
 import java.util.concurrent.ExecutionException;
@@ -31,6 +28,8 @@ import com.inf5190.chat.auth.model.LoginResponse;
 import com.inf5190.chat.messages.model.Message;
 import com.inf5190.chat.messages.model.NewMessageRequest;
 import com.inf5190.chat.messages.repository.FirestoreMessage;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootConfiguration()
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -81,10 +80,31 @@ public class ITestMessageController {
                 "http://localhost:" + this.emulatorPort + "/emulator/v1/projects/"
                         + this.firebaseProjectId
                         + "/databases/(default)/documents");
+
+    @Test
+    public void getMessagesWithValidToken() {
+        final String sessionCookie = this.login();
+        final HttpHeaders header = createHeadersWithSessionCookie(sessionCookie);
+        final HttpEntity<Object> headers = new HttpEntity<>(header);
+        final ResponseEntity<Message[]> response = this.restTemplate.exchange(this.messagesEndpointUrl,
+                HttpMethod.GET, headers, Message[].class);
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
     }
 
     @Test
-    public void getMessageNotLoggedIn() {
+    public void postMessageWithValidToken() {
+        final String sessionCookie = this.login();
+        final HttpHeaders header = createHeadersWithSessionCookie(sessionCookie);
+        final NewMessageRequest messageRequest = createSampleMessageRequest();
+        final HttpEntity<NewMessageRequest> requestEntity = createRequestEntityWithSessionCookie(messageRequest,
+                sessionCookie);
+        final ResponseEntity<Message> response = this.restTemplate.exchange(this.messagesEndpointUrl,
+                HttpMethod.POST, requestEntity, Message.class);
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+    }
+
+    @Test
+    public void getMessageWithoutToken() {
         ResponseEntity<String> response = this.restTemplate.getForEntity(this.messagesEndpointUrl,
                 String.class);
 
@@ -92,87 +112,66 @@ public class ITestMessageController {
     }
 
     @Test
-    public void getMessages() {
+    public void postMessageWithoutValidToken() {
+        ResponseEntity<String> response = this.restTemplate.postForEntity(this.messagesEndpointUrl,
+                createSampleMessageRequest(), String.class);
+        assertThat(response.getStatusCodeValue()).isEqualTo(403);
+    }
+
+    @Test
+    public void getMessagesWithFromIdParameter() {
         final String sessionCookie = this.login();
-
-        final HttpHeaders header = this.createHeadersWithSessionCookie(sessionCookie);
-        final HttpEntity<Object> headers = new HttpEntity<Object>(header);
-        final ResponseEntity<Message[]> response = this.restTemplate.exchange(this.messagesEndpointUrl,
+        final HttpHeaders header = createHeadersWithSessionCookie(sessionCookie);
+        final HttpEntity<Object> headers = new HttpEntity<>(header);
+        final String fromId = "1";
+        final String urlWithParameter = this.messagesEndpointUrl + "?fromId=" + fromId;
+        final ResponseEntity<Message[]> response = this.restTemplate.exchange(urlWithParameter,
                 HttpMethod.GET, headers, Message[].class);
-
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
     }
 
     @Test
-    public void getMessagesWithoutToken() {
-        ResponseEntity<String> response = this.restTemplate.getForEntity(this.messagesEndpointUrl, String.class);
-        assertThat(response.getStatusCodeValue()).isEqualTo(HttpStatus.FORBIDDEN.value());
-    }
-
-    @Test
-    public void postMessageWithoutToken() {
-        NewMessageRequest newMessageRequest = new NewMessageRequest("john_doe", "Hello, world!", null);
-        ResponseEntity<String> response = this.restTemplate.postForEntity(this.messagesEndpointUrl, newMessageRequest,
-                String.class);
-        assertThat(response.getStatusCodeValue()).isEqualTo(HttpStatus.FORBIDDEN.value());
-    }
-
-    @Test
-    public void getMessagesWithValidToken() throws InterruptedException, ExecutionException {
+    public void getMessagesWithoutFromIdParameter() {
         final String sessionCookie = this.login();
-
-        final HttpHeaders header = this.createHeadersWithSessionCookie(sessionCookie);
+        final HttpHeaders header = createHeadersWithSessionCookie(sessionCookie);
         final HttpEntity<Object> headers = new HttpEntity<>(header);
         final ResponseEntity<Message[]> response = this.restTemplate.exchange(this.messagesEndpointUrl,
                 HttpMethod.GET, headers, Message[].class);
-
-        assertThat(response.getStatusCodeValue()).isEqualTo(HttpStatus.OK.value());
-    }
-
-    @Test
-    public void getMessagesWithFromIdParameter() throws InterruptedException, ExecutionException {
-        final String sessionCookie = this.login();
-
-        final HttpHeaders header = this.createHeadersWithSessionCookie(sessionCookie);
-        final HttpEntity<Object> headers = new HttpEntity<>(header);
-        final ResponseEntity<Message[]> response = this.restTemplate.exchange(this.messagesEndpointUrl + "?fromId=1",
-                HttpMethod.GET, headers, Message[].class);
-
-        assertThat(response.getStatusCodeValue()).isEqualTo(HttpStatus.OK.value());
-    }
-
-    @Test
-    public void getMessagesWithInvalidFromId() throws InterruptedException, ExecutionException {
-        final String sessionCookie = this.login();
-
-        final HttpHeaders header = this.createHeadersWithSessionCookie(sessionCookie);
-        final HttpEntity<Object> headers = new HttpEntity<>(header);
-        final ResponseEntity<Message[]> response = this.restTemplate.exchange(
-                this.messagesEndpointUrl + "?fromId=invalidId",
-                HttpMethod.GET, headers, Message[].class);
-
-        assertThat(response.getStatusCodeValue()).isEqualTo(HttpStatus.NOT_FOUND.value()); // validation de l'erreur 404
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
     }
 
     @Test
     public void getMessagesWithMoreThanTwentyMessages() throws InterruptedException, ExecutionException {
-        // S'assurer que Firestore contient plus de 20 messages
+        for (int i = 3; i <= 25; i++) {
+            this.firestore.collection("messages").document(Integer.toString(i))
+                    .create(new FirestoreMessage("u" + i, Timestamp.now(), "t" + i, null)).get();
+        }
 
         final String sessionCookie = this.login();
-
-        final HttpHeaders header = this.createHeadersWithSessionCookie(sessionCookie);
+        final HttpHeaders header = createHeadersWithSessionCookie(sessionCookie);
         final HttpEntity<Object> headers = new HttpEntity<>(header);
         final ResponseEntity<Message[]> response = this.restTemplate.exchange(this.messagesEndpointUrl,
                 HttpMethod.GET, headers, Message[].class);
-
-        assertThat(response.getStatusCodeValue()).isEqualTo(HttpStatus.OK.value());
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getBody().length).isEqualTo(20);
     }
 
-    /**
-     * Se connecte et retourne le cookie de session.
-     * 
-     * @return le cookie de session.
-     */
+    @Test
+    public void getMessagesWithInvalidFromId() {
+        final String sessionCookie = this.login();
+        final HttpHeaders header = createHeadersWithSessionCookie(sessionCookie);
+        final HttpEntity<Object> headers = new HttpEntity<>(header);
+        final String invalidFromId = "invalidId";
+        final String urlWithInvalidFromId = this.messagesEndpointUrl + "?fromId=" + invalidFromId;
+        final ResponseEntity<String> response = this.restTemplate.exchange(urlWithInvalidFromId,
+                HttpMethod.GET, headers, String.class);
+        assertThat(response.getStatusCodeValue()).isEqualTo(404);
+    }
+
+    private NewMessageRequest createSampleMessageRequest() {
+        return new NewMessageRequest("username", "Sample Text", null);
+    }
+
     private String login() {
         ResponseEntity<LoginResponse> response = this.restTemplate.postForEntity(this.loginEndpointUrl,
                 new LoginRequest("username", "password"), LoginResponse.class);
@@ -184,10 +183,8 @@ public class ITestMessageController {
 
     private HttpEntity<NewMessageRequest> createRequestEntityWithSessionCookie(NewMessageRequest messageRequest,
             String cookieValue) {
-        HttpHeaders header = this.createHeadersWithSessionCookie(cookieValue);
-        return new HttpEntity<NewMessageRequest>(
-                messageRequest,
-                header);
+        HttpHeaders header = createHeadersWithSessionCookie(cookieValue);
+        return new HttpEntity<>(messageRequest, header);
     }
 
     private HttpHeaders createHeadersWithSessionCookie(String cookieValue) {
