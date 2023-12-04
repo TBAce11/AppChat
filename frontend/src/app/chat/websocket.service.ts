@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Observable, Subject } from "rxjs";
 import { environment } from "src/environments/environment";
+import { AuthenticationService } from "../login/authentication.service";
 
 export type WebSocketEvent = "notif";
 
@@ -14,7 +15,10 @@ export class WebSocketService {
 
   private events = new Subject<WebSocketEvent>();
 
-  constructor() {}
+  constructor(
+    private authenticationService: AuthenticationService
+  ) {
+  }
 
   public connect(): Observable<WebSocketEvent> {
     this.retryConnection();
@@ -27,6 +31,8 @@ export class WebSocketService {
     this.ws.onopen = () => {
       attempt = 1;
       console.log("Connexion établie");
+      // refresh login
+      setTimeout(() => this.authenticationService.refreshLogin(), this.retryInterval);
 
       // Notification de connexion établie
       this.events.next("notif");
@@ -45,8 +51,8 @@ export class WebSocketService {
         this.events.complete();
       }
     };
-    this.ws.onerror = () => {
-      console.log("Erreur: perte de connexion");
+    this.ws.onerror = (e) => {
+      console.log("Erreur: perte de connexion", e);
       this.events.error("error");
     };
   }
