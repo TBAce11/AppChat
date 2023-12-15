@@ -10,7 +10,6 @@ import { LoginResponse } from "./model/login-response";
 })
 export class AuthenticationService {
   static KEY = "username";
-  static PASS = "token";
 
   private username = new BehaviorSubject<string | null>(null);
 
@@ -26,31 +25,22 @@ export class AuthenticationService {
         { withCredentials: true }
       )
     );
-    localStorage.setItem(AuthenticationService.KEY, response.username);
-    localStorage.setItem(AuthenticationService.PASS, userCredentials.password);
 
+    this.setStoredUsername(response.username);
     this.username.next(response.username);
   }
 
-  async refreshLogin() {
-    //reconnexion au serveur avec les identifiants stockés dans le stockage local
-    const username = localStorage.getItem(AuthenticationService.KEY) ?? null;
-    const password = localStorage.getItem(AuthenticationService.PASS) ?? null;
-    if (!username || !password) {
-      return this.logout();
-    }
-
-    this.login({ username, password });
-  }
-
   async logout() {
-    await firstValueFrom(
-      this.httpClient.post(`${environment.backendUrl}/auth/logout`, null, {
-        withCredentials: true,
-      })
-    );
-    localStorage.removeItem(AuthenticationService.KEY);
-    this.username.next(null);
+    try {
+      await firstValueFrom(
+        this.httpClient.post(`${environment.backendUrl}/auth/logout`, null, {
+          withCredentials: true,
+        })
+      );
+    } finally {
+      this.setStoredUsername(null);
+      this.username.next(null);
+    }
   }
 
   getUsername(): Observable<string | null> {
@@ -58,6 +48,18 @@ export class AuthenticationService {
   }
 
   isConnected(): boolean {
-    return !!localStorage.getItem(AuthenticationService.KEY);
+    return this.getStoredUsername() != null;
+  }
+
+  private getStoredUsername(): string | null {
+    return localStorage.getItem(AuthenticationService.KEY);
+  }
+
+  private setStoredUsername(username: string | null) {
+    if (username != null) {
+      localStorage.setItem(AuthenticationService.KEY, username);
+    } else {
+      localStorage.removeItem(AuthenticationService.KEY);
+    }
   }
 }

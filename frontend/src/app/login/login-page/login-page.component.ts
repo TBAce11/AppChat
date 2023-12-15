@@ -10,7 +10,8 @@ import { HttpErrorResponse } from "@angular/common/http";
   styleUrls: ["./login-page.component.css"],
 })
 export class LoginPageComponent implements OnInit {
-  @ViewChild(LoginFormComponent, { static: false }) loginFormComponent!: LoginFormComponent;
+  @ViewChild(LoginFormComponent, { static: false })
+  loginFormComponent!: LoginFormComponent;
 
   constructor(
     private authenticationService: AuthenticationService,
@@ -25,14 +26,10 @@ export class LoginPageComponent implements OnInit {
       this.router.navigate(["/chat"]);
     } catch (error) {
       this.loginFormComponent.handleLoginError(error);
-      if (error instanceof HttpErrorResponse) {
-        if (error.status === 403) {
-          console.log("Mot de passe invalide");
-        } else {
-          console.log("Problème de connexion");
-        }
+      if (error instanceof HttpErrorResponse && error.status === 403) {
+        console.log("Mot de passe invalide");
       } else {
-        // Erreurs Non-HTTP 
+        // Autres erreurs
         console.log("Problème de connexion");
       }
     }

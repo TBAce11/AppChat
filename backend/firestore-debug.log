@@ -1,4 +1,4 @@
-Dec. 03, 2023 9:32:37 P.M. com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start
+Dec. 15, 2023 4:17:53 P.M. com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start
 INFO: Started WebSocket server on ws://127.0.0.1:9150
 API endpoint: http://127.0.0.1:8181
 If you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:

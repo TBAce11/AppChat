@@ -9,57 +9,52 @@ export type WebSocketEvent = "notif";
   providedIn: "root",
 })
 export class WebSocketService {
-  private ws: WebSocket | null = null;
-  private retryInterval = 2000;
-  private retryAttempts = 10;
+  static ATTEMPT_DELAY_IN_MS = 2000;
+  static retryAttempts = 10;
 
-  private events = new Subject<WebSocketEvent>();
+  private notifications: Subject<WebSocketEvent> | null = null;
+  private ws: WebSocket | null = null;
+  private shouldReconnect: boolean = false;
+  private timeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private authenticationService: AuthenticationService) {}
 
   public connect(): Observable<WebSocketEvent> {
-    this.retryConnection();
-    return this.events.asObservable();
-  }
-
-  private retryConnection(attempt = 1) {
-    this.ws = new WebSocket(`${environment.wsUrl}/notifications`);
-
-    this.ws.onopen = () => {
-      attempt = 1;
-      console.log("Connexion établie");
-
-      // réinitialisation de la connexion au serveur avec les mêmes identifiants
-      setTimeout(
-        () => this.authenticationService.refreshLogin(),
-        this.retryInterval
-      );
-
-      // Notification de connexion établie
-      this.events.next("notif");
-    };
-
-    this.ws.onmessage = () => this.events.next("notif");
-
-    this.ws.onclose = () => {
-      if (attempt <= this.retryAttempts) {
-        console.log("Nouvelle tentative de connexion en cours...");
-        // Nouvelle tentative de connexion après l'intervalle spécifiée
-        setTimeout(() => this.retryConnection(attempt + 1), this.retryInterval);
-      } else {
-        // Maximum de tentatives atteint -> arrêt des tentatives et notification de l'erreur
-        console.log("Maximum de tentatives atteint");
-        this.events.complete();
-      }
-    };
-    this.ws.onerror = (e) => {
-      console.log("Erreur: perte de connexion", e);
-      this.events.error("error");
-    };
+    this.shouldReconnect = true;
+    if (!this.notifications) {
+      this.notifications = new Subject<"notif">();
+      this.connectWebSocket();
+    }
+    return this.notifications.asObservable();
   }
 
   public disconnect() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = null;
+    this.shouldReconnect = false;
+    this.notifications?.complete();
+    this.notifications = null;
     this.ws?.close();
     this.ws = null;
+  }
+
+  private connectWebSocket() {
+    this.ws = new WebSocket(`${environment.wsUrl}/notifications`);
+    this.ws.onopen = () => this.notifications?.next("notif");
+    this.ws.onmessage = () => this.notifications?.next("notif");
+    this.ws.onclose = (e) => {
+      if (this.shouldReconnect) {
+        console.error("Websocket closed. Attempting reconnection in 2 seconds...");
+        this.timeout = setTimeout(
+          () => this.connectWebSocket(),
+          WebSocketService.ATTEMPT_DELAY_IN_MS
+        );
+      }
+    };
+    this.ws.onerror = (e) => {
+      console.error("Error on web socket.");
+    };
   }
 }

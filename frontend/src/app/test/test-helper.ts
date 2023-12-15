@@ -1,11 +1,11 @@
-import { ComponentFixture } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { ComponentFixture } from "@angular/core/testing";
+import { By } from "@angular/platform-browser";
 
 /**
  * Classe de test qui aide à aller chercher des éléments HTML de la page.
  *
  * Elle utilise l'attribut `data-testid=` pour sélectionner les éléments.
- * Par exemple: 
+ * Par exemple:
  *      <input
  *        name="username"
  *        type="text"
@@ -16,12 +16,10 @@ import { By } from '@angular/platform-browser';
 export class TestHelper<T> {
   constructor(private fixture: ComponentFixture<T>) {}
 
-  getInput(testid: string): HTMLInputElement | null {
-    const inputElement = this.fixture.debugElement.query(
+  getInput(testid: string): HTMLInputElement {
+    return this.fixture.debugElement.query(
       By.css(`input[data-testid="${testid}"]`)
-    );
-  
-    return inputElement ? inputElement.nativeElement : null;
+    ).nativeElement;
   }
 
   getElement(testid: string) {
@@ -43,6 +41,6 @@ export class TestHelper<T> {
 
   writeInInput(input: any, text: string) {
     input.value = text;
-    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event("input"));
   }
 }

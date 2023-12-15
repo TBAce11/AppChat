@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit, Output } from "@angular/core";
-import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { FormBuilder, Validators } from "@angular/forms";
 import { UserCredentials } from "../model/user-credentials";
 import { HttpErrorResponse } from "@angular/common/http";
 
@@ -9,32 +9,27 @@ import { HttpErrorResponse } from "@angular/common/http";
   styleUrls: ["./login-form.component.css"],
 })
 export class LoginFormComponent implements OnInit {
-  loginForm: FormGroup;
+  loginForm = this.fb.group({
+    username: ["", Validators.required],
+    password: ["", Validators.required],
+  });
+
   errorMessage: string = "";
+  
 
   @Output()
   login = new EventEmitter<UserCredentials>();
 
-  constructor(private fb: FormBuilder) {
-    this.loginForm = this.fb.group({
-      username: ["", [Validators.required]],
-      password: ["", [Validators.required]],
-    });
-  }
-
-  get username() {
-    return this.loginForm.get("username");
-  }
-
-  get password() {
-    return this.loginForm.get("password");
-  }
+  constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {}
 
   onLogin() {
-    if (this.loginForm.valid) {
-      this.errorMessage = ""; // Réinitialisation du message d'erreur
+    if (
+      this.loginForm.valid &&
+      this.loginForm.value.username &&
+      this.loginForm.value.password
+    ) {
       this.login.emit({
         username: this.loginForm.value.username,
         password: this.loginForm.value.password,
@@ -42,6 +37,22 @@ export class LoginFormComponent implements OnInit {
     } else {
       this.loginForm.markAllAsTouched();
     }
+  }
+
+  showMissingUsername() {
+    return this.showMissing("username");
+  }
+
+  showMissingPassword() {
+    return this.showMissing("password");
+  }
+
+  private showMissing(controlName: string) {
+    return (
+      this.loginForm.get(controlName)?.hasError("required") &&
+      (this.loginForm.get(controlName)?.dirty ||
+        this.loginForm.get(controlName)?.touched)
+    );
   }
 
   handleLoginError(error: any) {

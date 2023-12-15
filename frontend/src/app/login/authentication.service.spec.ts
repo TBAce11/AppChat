@@ -38,11 +38,13 @@ describe("AuthenticationService", () => {
       expect(req.request.body).toEqual(loginData);
       req.flush({ username: loginData.username });
 
-      // attente de la fin de la connexion
+      // wait for the login to complete
       await loginPromise;
     });
 
     it("should store and emit the username", async () => {
+      expect(await firstValueFrom(service.getUsername())).toBeNull();
+
       const loginPromise = service.login(loginData);
 
       const req = httpTestingController.expectOne(
@@ -52,14 +54,10 @@ describe("AuthenticationService", () => {
 
       await loginPromise;
 
-      // vérifier si le nom d'utilisateur est stocké et émis
-      expect(localStorage.getItem(AuthenticationService.KEY)).toEqual(
+      expect(await firstValueFrom(service.getUsername())).toEqual(
         loginData.username
       );
-
-      service.getUsername().subscribe((username) => {
-        expect(username).toEqual(loginData.username);
-      });
+      expect(localStorage.getItem("username")).toEqual(loginData.username);
     });
   });
 
@@ -72,20 +70,24 @@ describe("AuthenticationService", () => {
       service = TestBed.inject(AuthenticationService);
     });
 
-    it("should call POST to auth/logout", async () => {
+    it("should call POST with login data to auth/logout", async () => {
       const logoutPromise = service.logout();
 
       const req = httpTestingController.expectOne(
         `${environment.backendUrl}/auth/logout`
       );
       expect(req.request.method).toBe("POST");
-      req.flush({}); //supposition que le serveur réponde par un objet vide
+      req.flush({});
 
-      // attente de la fin de la déconnexion
+      // wait for the logout to complete
       await logoutPromise;
     });
 
     it("should remove the username from the service and local storage", async () => {
+      expect(await firstValueFrom(service.getUsername())).toEqual(
+        loginData.username
+      );
+
       const logoutPromise = service.logout();
 
       const req = httpTestingController.expectOne(
@@ -95,12 +97,8 @@ describe("AuthenticationService", () => {
 
       await logoutPromise;
 
-      // vérifier si le nom d'utilisateur est supprimé du service et du stockage local
-      expect(localStorage.getItem(AuthenticationService.KEY)).toBeNull();
-
-      service.getUsername().subscribe((username) => {
-        expect(username).toBeNull();
-      });
+      expect(await firstValueFrom(service.getUsername())).toBeNull();
+      expect(localStorage.getItem("username")).toBeNull();
     });
   });
 });

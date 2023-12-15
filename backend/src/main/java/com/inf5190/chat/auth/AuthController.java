@@ -1,16 +1,12 @@
 package com.inf5190.chat.auth;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import javax.servlet.http.Cookie;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,8 +40,7 @@ public class AuthController {
     }
 
     @PostMapping(AUTH_LOGIN_PATH)
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest)
-            throws InterruptedException, ExecutionException {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
         try {
             FirestoreUserAccount account = this.userAccountRepository.getUserAccount(loginRequest.username());
             if (account == null) {
@@ -62,12 +57,10 @@ public class AuthController {
 
             return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, sessionCookie.toString())
                     .body(new LoginResponse(loginRequest.username()));
-
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Unexpected error during login.", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error on login.");
         }
     }
 
@@ -77,12 +70,10 @@ public class AuthController {
             ResponseCookie deleteSessionCookie = this.createResponseSessionCookie(null, 0);
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, deleteSessionCookie.toString()).body(null);
-
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Unexpected error during logout.", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error on login.");
         }
     }
 
