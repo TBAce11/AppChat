@@ -77,11 +77,12 @@ public class AuthController {
         }
     }
 
-    private ResponseCookie createResponseSessionCookie(String sessiondId, long maxAge) {
-        return ResponseCookie.from(SESSION_ID_COOKIE_NAME, sessiondId)
+    private ResponseCookie createResponseSessionCookie(String sessionId, long maxAge) {
+        return ResponseCookie.from(SESSION_ID_COOKIE_NAME, sessionId)
                 .path("/")
                 .httpOnly(true)
                 .secure(true)
+                .sameSite("None")
                 .maxAge(maxAge)
                 .build();
     }
