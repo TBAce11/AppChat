@@ -2,9 +2,9 @@ package com.inf5190.chat;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Optional;
-import java.io.File;
 
 import javax.annotation.PostConstruct;
 
@@ -25,32 +25,26 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.cloud.StorageClient;
+
 import com.inf5190.chat.auth.AuthController;
 import com.inf5190.chat.auth.filter.AuthFilter;
-
 import com.inf5190.chat.auth.session.SessionManager;
 import com.inf5190.chat.messages.MessageController;
 
-/**
- * Application spring boot.
- */
 @SpringBootApplication
-@PropertySource("classpath:cors.properties")
 @PropertySource("classpath:firebase.properties")
+@PropertySource("classpath:cors.properties")
 public class ChatApplication {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatApplication.class);
-
-    @Value("${cors.allowedOrigins}")
-    private String allowedOriginsConfig;
-
-    @Value("${cors.allowedOrigins}")
-    private String allowedOriginsProperty;
 
     @Value("${firebase.project.id}")
     private String firebaseProjectId;
 
+    @Value("${cors.allowedOrigins}")
+    private String allowedOrigins;
+
     @Value("${firebase.storage.bucket.name}")
-    private String storageBucketNameProperty;
+    private String storageBucketName;
 
     public static void main(String[] args) {
         SpringApplication.run(ChatApplication.class, args);
@@ -59,15 +53,16 @@ public class ChatApplication {
     @PostConstruct
     public void initialiseFirebase() throws IOException {
         if (FirebaseApp.getApps().isEmpty()) {
-            String projectId = Optional.ofNullable(System.getenv("GOOGLE_CLOUD_PROJECT"))
-                    .orElse(this.firebaseProjectId);
 
-            final FirebaseOptions.Builder optionsBuilder = FirebaseOptions.builder()
+            String projectId = Optional.ofNullable(System.getenv("GOOGLE_CLOUD_PROJECT"))
+                    .orElse(firebaseProjectId);
+
+            FirebaseOptions.Builder optionsBuilder = FirebaseOptions.builder()
                     .setProjectId(projectId);
 
-            File f = new File("firebase-key.json");
-            if (f.exists()) {
-                FileInputStream serviceAccount = new FileInputStream(f);
+            File serviceAccountFile = new File("firebase-key.json");
+            if (serviceAccountFile.exists()) {
+                FileInputStream serviceAccount = new FileInputStream(serviceAccountFile);
                 optionsBuilder.setCredentials(GoogleCredentials.fromStream(serviceAccount));
             } else {
                 optionsBuilder.setCredentials(GoogleCredentials.getApplicationDefault());
@@ -80,6 +75,18 @@ public class ChatApplication {
         }
     }
 
+    @Bean("allowedOrigins")
+    public String[] getAllowedOrigins() {
+        return Optional.ofNullable(System.getenv("ALLOWED_ORIGINS"))
+                .orElse(allowedOrigins).split(",");
+    }
+
+    @Bean("storageBucketName")
+    public String getStorageBucketName() {
+        return Optional.ofNullable(System.getenv("STORAGE_BUCKET_NAME"))
+                .orElse(storageBucketName);
+    }
+
     @Bean
     public Firestore getFirestore() {
         return FirestoreClient.getFirestore();
@@ -90,15 +97,12 @@ public class ChatApplication {
         return StorageClient.getInstance();
     }
 
-    /**
-     * Fonction qui enregistre le filtre d'authorization.
-     */
     @Bean
     public FilterRegistrationBean<AuthFilter> authenticationFilter(
             SessionManager sessionManager) {
         FilterRegistrationBean<AuthFilter> registrationBean = new FilterRegistrationBean<>();
 
-        registrationBean.setFilter(new AuthFilter(sessionManager, Arrays.asList(allowedOriginsConfig.split(","))));
+        registrationBean.setFilter(new AuthFilter(sessionManager, Arrays.asList(getAllowedOrigins())));
         registrationBean.addUrlPatterns(MessageController.MESSAGES_PATH, AuthController.AUTH_LOGOUT_PATH);
 
         return registrationBean;
@@ -107,15 +111,5 @@ public class ChatApplication {
     @Bean
     public PasswordEncoder getPasswordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean("allowedOrigins")
-    public String[] getAllowedOrigins() {
-        return Optional.ofNullable(System.getenv("ALLOWED_ORIGINS")).orElse(this.allowedOriginsProperty).split(",");
-    }
-
-    @Bean("storageBucketName")
-    public String getStorageBucketName() {
-        return Optional.ofNullable(System.getenv("STORAGE_BUCKET_NAME")).orElse(this.storageBucketNameProperty);
     }
 }

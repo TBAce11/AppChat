@@ -10,19 +10,15 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import com.inf5190.chat.websocket.WebSocketHandler;
 import com.inf5190.chat.websocket.WebSocketManager;
 
-/**
- * Classe de configuration pour les websockets.
- */
-
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
+    private final WebSocketManager webSocketManager;
+
     @Autowired
     @Qualifier("allowedOrigins")
     private String[] allowedOrigins;
-
-    private final WebSocketManager webSocketManager;
 
     public WebSocketConfig(WebSocketManager webSocketManager) {
         this.webSocketManager = webSocketManager;

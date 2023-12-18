@@ -5,14 +5,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
-
-/**
- * Classe de configuration pour les CORS.
- */
 
 @Configuration
-@EnableWebSocket
 public class CorsConfig implements WebMvcConfigurer {
 
     @Autowired
@@ -24,6 +18,7 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(allowedOrigins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowCredentials(true);
+                .allowCredentials(true)
+                .allowedHeaders("*");
     }
 }

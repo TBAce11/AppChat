@@ -32,12 +32,12 @@ import org.springframework.web.server.ResponseStatusException;
  */
 @Repository
 public class MessageRepository {
+    private static final String COLLECTION_NAME = "messages";
+    private static final int DEFAULT_LIMIT = 20;
+
     @Autowired
     @Qualifier("storageBucketName")
     private String storageBucketName;
-
-    private static final String COLLECTION_NAME = "messages";
-    private static final int DEFAULT_LIMIT = 20;
 
     private final Firestore firestore = FirestoreClient.getFirestore();
 
