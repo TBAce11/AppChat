@@ -1,3 +1,5 @@
 Université du Québec à Montréal - Automne2023 - INF5190
 
 Benakezouh, Tarik - (BENT 11049805)
+
+Addresse de l'application web: https://inf5190-chat-prod-1bd3f.web.app
