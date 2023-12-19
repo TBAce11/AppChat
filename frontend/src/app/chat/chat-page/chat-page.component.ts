@@ -7,6 +7,7 @@ import { WebSocketEvent, WebSocketService } from "../websocket.service";
 import { FileReaderService } from "../file-reader.service";
 import { interval } from "rxjs";
 import { switchMap } from "rxjs/operators";
+import { HttpErrorResponse } from "@angular/common/http";
 
 @Component({
   selector: "app-chat-page",
@@ -37,16 +38,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.notifications$ = this.webSocketService.connect();
-
-    this.notificationsSubscription = this.notifications$
-      .pipe(
-        switchMap(() => interval(2000)) // tentative de reconnexion toutes les 2 secondes
-      )
-      .subscribe(() => {
-        //Gestion de la reconnexion (par exemple, récupérer les messages manqués)
-        this.messagesService.fetchMessages();
-      });
-    this.messagesService.fetchMessages();
+    this.notificationsSubscription = this.notifications$.subscribe(() => {
+      this.fetchMessages();
+    });
+    this.fetchMessages();
   }
 
   ngOnDestroy(): void {
@@ -66,17 +61,40 @@ export class ChatPageComponent implements OnInit, OnDestroy {
           ? await this.fileReaderService.readFile(event.file)
           : null;
 
-      await this.messagesService.postMessage({
-        text: event.message,
-        username: this.username,
-        imageData: imageData,
-      });
+      try {
+        await this.messagesService.postMessage({
+          text: event.message,
+          username: this.username,
+          imageData: imageData,
+        });
+      } catch (error) {
+        if (error instanceof HttpErrorResponse && error.status === 403) {
+          await this.onLogout();
+        } else {
+          console.error("Impossible d'envoyer le message.");
+        }
+      }
     }
   }
 
   async onLogout() {
-    this.messagesService.clear();
-    await this.authenticationService.logout();
-    this.router.navigate(["/"]);
+    try {
+      await this.authenticationService.logout();
+    } finally {
+      this.messagesService.clear();
+      this.router.navigate(["/"]);
+    }
+  }
+
+  private async fetchMessages() {
+    try {
+      await this.messagesService.fetchMessages();
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 403) {
+        await this.onLogout();
+      } else {
+        console.error("Impossible de charger les messages.");
+      }
+    }
   }
 }

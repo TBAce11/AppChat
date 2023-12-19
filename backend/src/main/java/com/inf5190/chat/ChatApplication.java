@@ -2,7 +2,9 @@ package com.inf5190.chat;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.File;
 import java.util.Arrays;
+import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -23,50 +25,66 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.cloud.StorageClient;
+
 import com.inf5190.chat.auth.AuthController;
 import com.inf5190.chat.auth.filter.AuthFilter;
-
 import com.inf5190.chat.auth.session.SessionManager;
 import com.inf5190.chat.messages.MessageController;
 
-/**
- * Application spring boot.
- */
 @SpringBootApplication
-@PropertySource("classpath:cors.properties")
 @PropertySource("classpath:firebase.properties")
+@PropertySource("classpath:cors.properties")
 public class ChatApplication {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatApplication.class);
 
-    @Value("${cors.allowedOrigins}")
-    private String allowedOriginsConfig;
-
     @Value("${firebase.project.id}")
     private String firebaseProjectId;
+
+    @Value("${cors.allowedOrigins}")
+    private String allowedOrigins;
+
+    @Value("${firebase.storage.bucket.name}")
+    private String storageBucketName;
 
     public static void main(String[] args) {
         SpringApplication.run(ChatApplication.class, args);
     }
 
     @PostConstruct
-    public void initialiseFirebase() {
-        try {
-            if (FirebaseApp.getApps().size() == 0) {
-                FileInputStream serviceAccount = new FileInputStream("firebase-key.json");
+    public void initialiseFirebase() throws IOException {
+        if (FirebaseApp.getApps().isEmpty()) {
 
-                FirebaseOptions options = FirebaseOptions.builder()
-                        .setProjectId(this.firebaseProjectId)
-                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                        .build();
+            String projectId = Optional.ofNullable(System.getenv("GOOGLE_CLOUD_PROJECT"))
+                    .orElse(firebaseProjectId);
 
-                LOGGER.info("Initializing Firebase application.");
-                FirebaseApp.initializeApp(options);
+            FirebaseOptions.Builder optionsBuilder = FirebaseOptions.builder()
+                    .setProjectId(projectId);
+
+            File serviceAccountFile = new File("firebase-key.json");
+            if (serviceAccountFile.exists()) {
+                FileInputStream serviceAccount = new FileInputStream(serviceAccountFile);
+                optionsBuilder.setCredentials(GoogleCredentials.fromStream(serviceAccount));
             } else {
-                LOGGER.info("Firebase application already initialized.");
+                optionsBuilder.setCredentials(GoogleCredentials.getApplicationDefault());
             }
-        } catch (IOException e) {
-            LOGGER.error("**** Could not initialise application. Please check you service account key path. ****");
+
+            LOGGER.info("Initializing Firebase application.");
+            FirebaseApp.initializeApp(optionsBuilder.build());
+        } else {
+            LOGGER.info("Firebase application already initialized.");
         }
+    }
+
+    @Bean("allowedOrigins")
+    public String[] getAllowedOrigins() {
+        return Optional.ofNullable(System.getenv("ALLOWED_ORIGINS"))
+                .orElse(allowedOrigins).split(",");
+    }
+
+    @Bean("storageBucketName")
+    public String getStorageBucketName() {
+        return Optional.ofNullable(System.getenv("STORAGE_BUCKET_NAME"))
+                .orElse(storageBucketName);
     }
 
     @Bean
@@ -79,15 +97,12 @@ public class ChatApplication {
         return StorageClient.getInstance();
     }
 
-    /**
-     * Fonction qui enregistre le filtre d'authorization.
-     */
     @Bean
     public FilterRegistrationBean<AuthFilter> authenticationFilter(
             SessionManager sessionManager) {
         FilterRegistrationBean<AuthFilter> registrationBean = new FilterRegistrationBean<>();
 
-        registrationBean.setFilter(new AuthFilter(sessionManager, Arrays.asList(allowedOriginsConfig.split(","))));
+        registrationBean.setFilter(new AuthFilter(sessionManager, Arrays.asList(getAllowedOrigins())));
         registrationBean.addUrlPatterns(MessageController.MESSAGES_PATH, AuthController.AUTH_LOGOUT_PATH);
 
         return registrationBean;

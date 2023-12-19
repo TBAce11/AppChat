@@ -12,13 +12,9 @@ export const loginPageGuard: CanActivateFn = (
   route: ActivatedRouteSnapshot,
   state: RouterStateSnapshot
 ): boolean | UrlTree => {
-  const isConnected = inject(AuthenticationService).isConnected();
-
-  if (isConnected) {
-    // utilisateur connecté -> redirection vers la page de chat
-    return inject(Router).parseUrl("/chat");
-  }
-
-  // navigation dans la page de connexion permise
-  return true;
+  return inject(AuthenticationService).isConnected()
+    ? // utilisateur connecté -> redirection vers la page de chat
+      inject(Router).parseUrl("/chat")
+    : // navigation dans la page de connexion permise
+      true;
 };

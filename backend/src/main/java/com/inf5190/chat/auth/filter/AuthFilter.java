@@ -39,17 +39,21 @@ public class AuthFilter implements Filter {
         final HttpServletRequest httpRequest = (HttpServletRequest) request;
         final HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Si c'est la méthode OPTIONS on laisse passer. C'est une requête
-        // pre-flight pour les CORS.
+        String origin = httpRequest.getHeader(HttpHeaders.ORIGIN);
+        if (this.allowedOrigins.contains(origin)) {
+            httpResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+            httpResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            httpResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, PUT, DELETE, OPTIONS");
+            httpResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type, Authorization");
+        }
+
+        // OPTIONS request (pre-flight CORS) => let it pass
         if (httpRequest.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.name())) {
-            chain.doFilter(request, response);
+            httpResponse.setStatus(HttpServletResponse.SC_OK);
             return;
         }
 
-        // On vérifie si le session cookie est présent sinon on n'accepte pas la
-        // requête.
         final Cookie[] cookies = httpRequest.getCookies();
-
         if (cookies == null) {
             this.sendAuthErrorResponse(httpRequest, httpResponse);
             return;
@@ -64,8 +68,6 @@ public class AuthFilter implements Filter {
         }
 
         SessionData sessionData = this.sessionManager.getSession(sessionCookie.get().getValue());
-
-        // On vérifie si la session existe sinon on n'accepte pas la requête.
         if (sessionData == null) {
             this.sendAuthErrorResponse(httpRequest, httpResponse);
             return;

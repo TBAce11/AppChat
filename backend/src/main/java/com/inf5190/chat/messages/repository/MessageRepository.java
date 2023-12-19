@@ -19,6 +19,8 @@ import com.inf5190.chat.messages.model.NewMessageRequest;
 
 import io.jsonwebtoken.io.Decoders;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.server.ResponseStatusException;
@@ -31,8 +33,11 @@ import org.springframework.web.server.ResponseStatusException;
 @Repository
 public class MessageRepository {
     private static final String COLLECTION_NAME = "messages";
-    private static final String BUCKET_NAME = "inf5190-chat-51bc0.appspot.com";
     private static final int DEFAULT_LIMIT = 20;
+
+    @Autowired
+    @Qualifier("storageBucketName")
+    private String storageBucketName;
 
     private final Firestore firestore = FirestoreClient.getFirestore();
 
@@ -60,11 +65,11 @@ public class MessageRepository {
         String imageUrl = null;
         // Entreposage de l'image dans Cloud Storage
         if (message.imageData() != null) {
-            Bucket b = StorageClient.getInstance().bucket(BUCKET_NAME);
+            Bucket b = StorageClient.getInstance().bucket(storageBucketName);
             String path = String.format("images/%s.%s", ref.getId(), message.imageData().type());
             b.create(path, Decoders.BASE64.decode(message.imageData().data()),
                     BlobTargetOption.predefinedAcl(PredefinedAcl.PUBLIC_READ));
-            imageUrl = String.format("https://storage.googleapis.com/%s/%s", BUCKET_NAME, path);
+            imageUrl = String.format("https://storage.googleapis.com/%s/%s", storageBucketName, path);
         }
 
         FirestoreMessage firestoreMessage = new FirestoreMessage(

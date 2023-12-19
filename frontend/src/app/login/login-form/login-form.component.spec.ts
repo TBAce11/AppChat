@@ -29,7 +29,7 @@ describe("LoginFormComponent", () => {
     fixture.detectChanges();
   });
 
-  it('should emit username and password', () => {
+  it("should emit username and password", () => {
     let username: string;
     let password: string;
 
@@ -38,61 +38,116 @@ describe("LoginFormComponent", () => {
       password = event.password;
     });
 
-    const usernameInput = testHelper.getInput('username-input');
-    const passwordInput = testHelper.getInput('password-input');
-    testHelper.writeInInput(usernameInput, 'username');
-    testHelper.writeInInput(passwordInput, 'pwd');
+    writeUsername("username");
+    writePassword("pwd");
 
-    component.onLogin();
+    clickLoginButton();
 
-    expect(username!).toBe('username');
-    expect(password!).toBe('pwd');
+    expect(username!).toBe("username");
+    expect(password!).toBe("pwd");
     expect(component.loginForm.valid).toBe(true);
   });
 
-  it('should not emit if username is not present', () => {
-    let emitted = false;
+  it("should not emit if username and password are both empty", () => {
+    let username: string;
+    let password: string;
 
-    component.login.subscribe(() => {
-      emitted = true;
+    component.login.subscribe((event) => {
+      username = event.username;
+      password = event.password;
     });
 
-    const passwordInput = testHelper.getInput('password-input');
-    testHelper.writeInInput(passwordInput, 'pwd');
+    clickLoginButton();
 
-    component.onLogin();
-
-    expect(emitted).toBe(false);
-    expect(component.errorMessage).toBe(''); //aucun message d'erreur 403
+    expect(username!).toBeUndefined();
+    expect(password!).toBeUndefined();
+    expect(component.loginForm.valid).toBe(false);
   });
 
-  it('should not emit if password is not present', () => {
-    let emitted = false;
+  it("should not emit if username is empty", () => {
+    let username: string;
+    let password: string;
 
-    component.login.subscribe(() => {
-      emitted = true;
+    component.login.subscribe((event) => {
+      username = event.username;
+      password = event.password;
     });
 
-    const usernameInput = testHelper.getInput('username-input');
-    testHelper.writeInInput(usernameInput, 'username');
+    writePassword("pwd");
 
-    component.onLogin();
+    clickLoginButton();
 
-    expect(emitted).toBe(false);
-    expect(component.errorMessage).toBe(''); 
+    expect(username!).toBeUndefined();
+    expect(password!).toBeUndefined();
+    expect(component.loginForm.valid).toBe(false);
   });
 
-  it('should not emit if username and password are not present', () => {
-    let emitted = false;
+  it("should not emit if password is empty", () => {
+    let username: string;
+    let password: string;
 
-    component.login.subscribe(() => {
-      emitted = true;
+    component.login.subscribe((event) => {
+      username = event.username;
+      password = event.password;
     });
 
-    component.onLogin();
+    writeUsername("username");
 
-    expect(emitted).toBe(false);
-    expect(component.errorMessage).toBe(''); 
-    expect(component.errorMessage).toBe(''); 
+    clickLoginButton();
+
+    expect(username!).toBeUndefined();
+    expect(password!).toBeUndefined();
+    expect(component.loginForm.valid).toBe(false);
   });
+
+  it("should not show error message if username and password are present", () => {
+    writeUsername("username");
+    writePassword("pwd");
+
+    clickLoginButton();
+
+    fixture.detectChanges();
+
+    const usernameErrorMessage = testHelper.getElement("username-error");
+    expect(usernameErrorMessage).toBeUndefined();
+    const passwordErrorMessage = testHelper.getElement("password-error");
+    expect(passwordErrorMessage).toBeUndefined();
+  });
+
+  it("should show error message if username is missing", () => {
+    writePassword("pwd");
+
+    clickLoginButton();
+
+    fixture.detectChanges();
+
+    const errorMessage = testHelper.getElement("username-error");
+    expect(errorMessage).toBeDefined();
+  });
+
+  it("should show error message if password is missing", () => {
+    writeUsername("username");
+
+    clickLoginButton();
+
+    fixture.detectChanges();
+
+    const errorMessage = testHelper.getElement("password-error");
+    expect(errorMessage).toBeDefined();
+  });
+
+  function writeUsername(username: string) {
+    const usernameInput = testHelper.getInput("username-input");
+    testHelper.writeInInput(usernameInput, username);
+  }
+
+  function writePassword(password: string) {
+    const passwordInput = testHelper.getInput("password-input");
+    testHelper.writeInInput(passwordInput, password);
+  }
+
+  function clickLoginButton() {
+    const button = testHelper.getButton("login-button");
+    button.click();
+  }
 });
