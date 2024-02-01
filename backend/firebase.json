@@ -18,5 +18,19 @@
       "port": 8282
     },
     "singleProjectMode": true
+  },
+  "hosting": {
+    "public": "dist/app-chat",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }
